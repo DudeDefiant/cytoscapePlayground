@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cytoscape.js Rich Node Flowchart Playground</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Cytoscape.js and Extensions -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-node-html-label@1.2.2/dist/cytoscape-node-html-label.min.js"></script>
+</head>
+<body>
+    <!-- Main Cytoscape Container -->
+    <div id="cy"></div>
+    
+    <!-- Control Panel -->
+    <div class="controls">
+        <div class="heading">
+            <h3>🎮 Cytoscape Playground</h3>
+            <h6>Author: @Spandan</h6>
+        </div>
+        
+        <div class="btn-group layout-buttons">
+            <h4>📐 Layouts</h4>
+            <button onclick="applyLayout('dagre')">Hierarchical (Dagre)</button>
+            <button onclick="applyLayout('breadthfirst')">Breadth First</button>
+            <button onclick="applyLayout('cola')">Force-Directed (Cola)</button>
+            <button onclick="applyLayout('grid')">Grid Layout</button>
+            <button onclick="applyLayout('circle')">Circle Layout</button>
+        </div>
+        
+        <div class="btn-group data-buttons">
+            <h4>📊 Data Sets</h4>
+            <button onclick="loadDataset('workflow')">Workflow (No Groups, Medium)</button>
+            <button onclick="loadDataset('organization')">Org Chart (No Groups, Minimal)</button>
+            <button onclick="loadDataset('system')">System Arch (With Groups, Minimal)</button>
+            <button onclick="loadDataset('complex')">Complex (With Groups, Full)</button>
+            <button onclick="loadDataset('complexNoGroups')">Complex (No Groups, Full)</button>
+        </div>
+        
+        <div class="btn-group view-buttons">
+            <h4>👁️ View Options</h4>
+            <button onclick="fitToScreen()">Fit to Screen</button>
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+        </div>
+        
+        <div class="btn-group json-buttons">
+            <h4>📝 JSON Editor</h4>
+            <button onclick="exportGraphJSON()">Export JSON</button>
+            <button onclick="openJSONEditor()">Edit JSON</button>
+            <button onclick="triggerFileUpload()">Import JSON File</button>
+        </div>
+    </div>
+    
+    <!-- Info Panel (shown on node click) -->
+    <div class="info-panel" id="infoPanel">
+        <h4>📋 Node Details</h4>
+        <p><strong>ID:</strong> <span id="nodeId"></span></p>
+        <p><strong>Type:</strong> <span id="nodeType"></span></p>
+        <p><strong>Status:</strong> <span id="nodeStatus"></span></p>
+        <p><strong>Group:</strong> <span id="nodeGroup"></span></p>
+        <p><strong>Connections:</strong> <span id="nodeConnections"></span></p>
+        <button onclick="closeInfoPanel()">Close</button>
+    </div>
+    
+    <!-- JSON Editor Modal -->
+    <div class="json-editor-modal" id="jsonEditorModal">
+        <div class="json-editor-content">
+            <h3>📝 Edit Graph JSON</h3>
+            
+            <div class="json-error" id="jsonError"></div>
+            
+            <div class="file-upload-area" onclick="triggerFileUpload()">
+                <i class="fas fa-upload" style="font-size: 24px; color: #667eea; margin-bottom: 10px;"></i>
+                <div class="file-upload-label">Click to upload JSON file</div>
+                <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
+            </div>
+            
+            <p style="margin-bottom: 10px; color: #666;">
+                <strong>Instructions:</strong> Edit the JSON below to modify the graph structure. 
+                The JSON should contain an "elements" array with nodes and edges.
+            </p>
+            
+            <textarea 
+                id="jsonEditorTextarea" 
+                class="json-editor-textarea" 
+                placeholder='{"elements": [...]}'
+            ></textarea>
+            
+            <div class="json-editor-actions">
+                <button onclick="closeJSONEditor()" style="background: #999;">Cancel</button>
+                <button onclick="applyJSONToGraph()">Apply Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading" style="display: none;">
+        <i class="fas fa-spinner"></i>
+        <p>Loading visualization...</p>
+    </div>
+
+    <!-- Application Scripts (order matters) -->
+    <script src="js/core.js"></script>
+    <script src="js/datasets.js"></script>
+    <script src="js/layouts.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/json-editor.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+

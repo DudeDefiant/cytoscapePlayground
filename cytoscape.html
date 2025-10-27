@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cytoscape.js Rich Node Flowchart Playground</title>
+    
+    <!-- Cytoscape.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    
+    <!-- Layout algorithms - base libraries must load before cytoscape extensions -->
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
+    
+    <!-- For HTML labels in nodes -->
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-node-html-label@1.2.2/dist/cytoscape-node-html-label.min.js"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        #cy {
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Control Panel */
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .controls h3 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .layout-buttons button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .data-buttons button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .view-buttons button {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .info-panel.active {
+            display: block;
+        }
+        
+        .info-panel h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-panel p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Custom node HTML templates */
+        .node-html-label {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 150px;
+            max-width: 200px;
+            font-size: 12px;
+        }
+        
+        .node-process {
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .node-decision {
+            border-left: 4px solid #FF9800;
+        }
+        
+        .node-data {
+            border-left: 4px solid #2196F3;
+        }
+        
+        .node-terminal {
+            border-left: 4px solid #9C27B0;
+        }
+        
+        .node-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+            text-align: center;
+        }
+        
+        .node-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .node-description {
+            color: #666;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        .node-metrics {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 16px;
+        }
+        
+        .metric-label {
+            font-size: 10px;
+            color: #999;
+        }
+        
+        /* Loading overlay */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2000;
+        }
+        
+        .loading i {
+            font-size: 48px;
+            color: #667eea;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Cytoscape Container -->
+    <div id="cy"></div>
+    
+    <!-- Control Panel -->
+    <div class="controls">
+        <h3>🎮 Playground Controls</h3>
+        
+        <div class="btn-group layout-buttons">
+            <h4>📐 Layouts</h4>
+            <button onclick="applyLayout('dagre')">Hierarchical (Dagre)</button>
+            <button onclick="applyLayout('breadthfirst')">Breadth First</button>
+            <button onclick="applyLayout('cola')">Force-Directed (Cola)</button>
+            <button onclick="applyLayout('grid')">Grid Layout</button>
+            <button onclick="applyLayout('circle')">Circle Layout</button>
+        </div>
+        
+        <div class="btn-group data-buttons">
+            <h4>📊 Data Sets</h4>
+            <button onclick="loadDataset('workflow')">Workflow Example</button>
+            <button onclick="loadDataset('organization')">Organization Chart</button>
+            <button onclick="loadDataset('system')">System Architecture</button>
+            <button onclick="loadDataset('complex')">Complex Diagram</button>
+        </div>
+        
+        <div class="btn-group view-buttons">
+            <h4>👁️ View Options</h4>
+            <button onclick="fitToScreen()">Fit to Screen</button>
+            <button onclick="zoomIn()">Zoom In</button>
+            <button onclick="zoomOut()">Zoom Out</button>
+            <button onclick="toggleGroups()">Toggle Groups</button>
+            <button onclick="exportJSON()">Export JSON</button>
+        </div>
+    </div>
+    
+    <!-- Info Panel (shown on node click) -->
+    <div class="info-panel" id="infoPanel">
+        <h4>📋 Node Details</h4>
+        <p><strong>ID:</strong> <span id="nodeId"></span></p>
+        <p><strong>Type:</strong> <span id="nodeType"></span></p>
+        <p><strong>Status:</strong> <span id="nodeStatus"></span></p>
+        <p><strong>Group:</strong> <span id="nodeGroup"></span></p>
+        <p><strong>Connections:</strong> <span id="nodeConnections"></span></p>
+        <button onclick="closeInfoPanel()">Close</button>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading" id="loading" style="display: none;">
+        <i class="fas fa-spinner"></i>
+        <p>Loading visualization...</p>
+    </div>
+
+    <script>
+        // Register extensions
+        cytoscape.use(cytoscapeDagre);
+        cytoscape.use(cytoscapeCola);
+        // cytoscape.use(cytoscapeNodeHtmlLabel); // Extension not available or not needed
+        
+        var cy; // Global cytoscape instance
+        
+        // Initialize Cytoscape
+        function initCytoscape() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                
+                style: [
+                    // Core node styling
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#fff',
+                            'border-width': 2,
+                            'border-color': '#667eea',
+                            'width': 180,
+                            'height': 80,
+                            'shape': 'round-rectangle',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'overlay-padding': 6,
+                            'z-index': 10
+                        }
+                    },
+                    
+                    // Process nodes
+                    {
+                        selector: '.process',
+                        style: {
+                            'border-color': '#4CAF50',
+                            'background-color': '#E8F5E9'
+                        }
+                    },
+                    
+                    // Decision nodes
+                    {
+                        selector: '.decision',
+                        style: {
+                            'shape': 'diamond',
+                            'border-color': '#FF9800',
+                            'background-color': '#FFF3E0',
+                            'width': 120,
+                            'height': 120
+                        }
+                    },
+                    
+                    // Data nodes
+                    {
+                        selector: '.data',
+                        style: {
+                            'shape': 'barrel',
+                            'border-color': '#2196F3',
+                            'background-color': '#E3F2FD'
+                        }
+                    },
+                    
+                    // Terminal nodes
+                    {
+                        selector: '.terminal',
+                        style: {
+                            'shape': 'round-rectangle',
+                            'border-color': '#9C27B0',
+                            'background-color': '#F3E5F5'
+                        }
+                    },
+                    
+                    // Group/Compound nodes
+                    {
+                        selector: ':parent',
+                        style: {
+                            'background-color': '#f0f0f0',
+                            'background-opacity': 0.3,
+                            'border-width': 2,
+                            'border-color': '#999',
+                            'border-style': 'dashed',
+                            'label': 'data(label)',
+                            'text-valign': 'top',
+                            'text-halign': 'center',
+                            'font-size': '16px',
+                            'font-weight': 'bold',
+                            'padding': 30,
+                            'z-index': 1
+                        }
+                    },
+                    
+                    // Edges
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 2,
+                            'line-color': '#999',
+                            'target-arrow-color': '#999',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'label': 'data(label)',
+                            'font-size': '12px',
+                            'text-background-color': '#fff',
+                            'text-background-opacity': 1,
+                            'text-background-padding': '3px',
+                            'text-rotation': 'autorotate',
+                            'z-index': 5
+                        }
+                    },
+                    
+                    // Highlighted elements
+                    {
+                        selector: '.highlighted',
+                        style: {
+                            'background-color': '#FFE082',
+                            'border-color': '#F57C00',
+                            'border-width': 3,
+                            'transition-property': 'background-color, border-color',
+                            'transition-duration': '0.3s'
+                        }
+                    },
+                    
+                    // Selected elements
+                    {
+                        selector: ':selected',
+                        style: {
+                            'border-width': 3,
+                            'border-color': '#764ba2'
+                        }
+                    }
+                ],
+                
+                layout: {
+                    name: 'dagre',
+                    rankDir: 'TB',
+                    animate: true,
+                    animationDuration: 500,
+                    nodeDimensionsIncludeLabels: true,
+                    padding: 50
+                },
+                
+                // Interaction options
+                wheelSensitivity: 0.2,
+                minZoom: 0.2,
+                maxZoom: 3
+            });
+            
+            // Initialize HTML labels for rich content
+            cy.nodeHtmlLabel([
+                {
+                    query: 'node',
+                    valign: "center",
+                    halign: "center",
+                    valignBox: "center",
+                    halignBox: "center",
+                    tpl: function(data) {
+                        return createNodeHTML(data);
+                    }
+                }
+            ]);
+            
+            // Event handlers
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                showNodeInfo(node);
+            });
+            
+            cy.on('tap', function(evt) {
+                if (evt.target === cy) {
+                    closeInfoPanel();
+                }
+            });
+            
+            cy.on('mouseover', 'node', function(evt) {
+                evt.target.addClass('highlighted');
+            });
+            
+            cy.on('mouseout', 'node', function(evt) {
+                evt.target.removeClass('highlighted');
+            });
+        }
+        
+        // Create rich HTML content for nodes
+        function createNodeHTML(data) {
+            const iconMap = {
+                process: 'fa-cogs',
+                decision: 'fa-code-branch',
+                data: 'fa-database',
+                terminal: 'fa-flag-checkered',
+                user: 'fa-user',
+                system: 'fa-server',
+                api: 'fa-plug',
+                document: 'fa-file-alt'
+            };
+            
+            const colorMap = {
+                process: '#4CAF50',
+                decision: '#FF9800',
+                data: '#2196F3',
+                terminal: '#9C27B0'
+            };
+            
+            const icon = iconMap[data.nodeType] || 'fa-circle';
+            const color = colorMap[data.nodeType] || '#667eea';
+            
+            let html = `
+                <div class="node-html-label node-${data.nodeType}">
+                    <i class="node-icon fas ${icon}" style="color: ${color}"></i>
+                    <div class="node-title">${data.title || data.id}</div>
+            `;
+            
+            if (data.description) {
+                html += `<div class="node-description">${data.description}</div>`;
+            }
+            
+            if (data.metrics) {
+                html += '<div class="node-metrics">';
+                for (const [key, value] of Object.entries(data.metrics)) {
+                    html += `
+                        <div class="metric">
+                            <div class="metric-value">${value}</div>
+                            <div class="metric-label">${key}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            return html;
+        }
+        
+        // Load different datasets
+        function loadDataset(type) {
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+    
+            showLoading();
+            
+            const datasets = {
+                workflow: getWorkflowData(),
+                organization: getOrganizationData(),
+                system: getSystemArchitectureData(),
+                complex: getComplexDiagramData()
+            };
+            
+            const data = datasets[type];
+            cy.elements().remove();
+            cy.add(data);
+            applyLayout('dagre');
+            
+            setTimeout(() => hideLoading(), 500);
+        }
+        
+        // Sample dataset: Workflow
+        function getWorkflowData() {
+            return [
+                // Group 1: Input Processing
+                { group: 'nodes', data: { id: 'group1', label: 'Input Processing' } },
+                
+                // Nodes in Group 1
+                { group: 'nodes', data: { 
+                    id: 'start', 
+                    parent: 'group1',
+                    nodeType: 'terminal', 
+                    title: 'Start Process',
+                    description: 'Workflow initialization',
+                    metrics: { Time: '0s', Status: '✓' }
+                }, classes: 'terminal' },
+                
+                { group: 'nodes', data: { 
+                    id: 'validate', 
+                    parent: 'group1',
+                    nodeType: 'process', 
+                    title: 'Validate Input',
+                    description: 'Check data integrity and format',
+                    metrics: { Pass: '95%', Fail: '5%' }
+                }, classes: 'process' },
+                
+                { group: 'nodes', data: { 
+                    id: 'transform', 
+                    parent: 'group1',
+                    nodeType: 'process', 
+                    title: 'Transform Data',
+                    description: 'Normalize and clean data',
+                    metrics: { Items: '1.2k', Time: '45ms' }
+                }, classes: 'process' },
+                
+                // Group 2: Processing
+                { group: 'nodes', data: { id: 'group2', label: 'Core Processing' } },
+                
+                // Decision node
+                { group: 'nodes', data: { 
+                    id: 'decision1', 
+                    parent: 'group2',
+                    nodeType: 'decision', 
+                    title: 'Route Check',
+                    description: 'Determine processing path',
+                    metrics: { A: '60%', B: '40%' }
+                }, classes: 'decision' },
+                
+                // Process branches
+                { group: 'nodes', data: { 
+                    id: 'processA', 
+                    parent: 'group2',
+                    nodeType: 'process', 
+                    title: 'Process Type A',
+                    description: 'Standard processing pipeline',
+                    metrics: { Speed: 'Fast', Load: 'Low' }
+                }, classes: 'process' },
+                
+                { group: 'nodes', data: { 
+                    id: 'processB', 
+                    parent: 'group2',
+                    nodeType: 'process', 
+                    title: 'Process Type B',
+                    description: 'Complex processing pipeline',
+                    metrics: { Speed: 'Slow', Load: 'High' }
+                }, classes: 'process' },
+                
+                // Group 3: Output
+                { group: 'nodes', data: { id: 'group3', label: 'Output Generation' } },
+                
+                // Data storage
+                { group: 'nodes', data: { 
+                    id: 'store', 
+                    parent: 'group3',
+                    nodeType: 'data', 
+                    title: 'Data Store',
+                    description: 'Persist processed results',
+                    metrics: { Size: '256GB', Type: 'SQL' }
+                }, classes: 'data' },
+                
+                { group: 'nodes', data: { 
+                    id: 'report', 
+                    parent: 'group3',
+                    nodeType: 'process', 
+                    title: 'Generate Report',
+                    description: 'Create summary and analytics',
+                    metrics: { Format: 'PDF', Pages: '12' }
+                }, classes: 'process' },
+                
+                { group: 'nodes', data: { 
+                    id: 'end', 
+                    parent: 'group3',
+                    nodeType: 'terminal', 
+                    title: 'Complete',
+                    description: 'Workflow completed successfully',
+                    metrics: { Time: '2.3s', Status: '✓' }
+                }, classes: 'terminal' },
+                
+                // Edges
+                { group: 'edges', data: { source: 'start', target: 'validate', label: 'Initialize' } },
+                { group: 'edges', data: { source: 'validate', target: 'transform', label: 'Valid data' } },
+                { group: 'edges', data: { source: 'transform', target: 'decision1', label: 'Processed' } },
+                { group: 'edges', data: { source: 'decision1', target: 'processA', label: 'Route A (60%)' } },
+                { group: 'edges', data: { source: 'decision1', target: 'processB', label: 'Route B (40%)' } },
+                { group: 'edges', data: { source: 'processA', target: 'store', label: 'Save results' } },
+                { group: 'edges', data: { source: 'processB', target: 'store', label: 'Save results' } },
+                { group: 'edges', data: { source: 'store', target: 'report', label: 'Read data' } },
+                { group: 'edges', data: { source: 'report', target: 'end', label: 'Finalize' } }
+            ];
+        }
+        
+        // Sample dataset: Organization Chart
+        function getOrganizationData() {
+            return [
+                // Executive Level
+                { group: 'nodes', data: { id: 'exec', label: 'Executive Team' } },
+                { group: 'nodes', data: { 
+                    id: 'ceo', 
+                    parent: 'exec',
+                    nodeType: 'user', 
+                    title: 'CEO',
+                    description: 'Chief Executive Officer',
+                    metrics: { Reports: '5', Years: '3' }
+                }},
+                
+                // Department Groups
+                { group: 'nodes', data: { id: 'tech', label: 'Technology' } },
+                { group: 'nodes', data: { 
+                    id: 'cto', 
+                    parent: 'tech',
+                    nodeType: 'user', 
+                    title: 'CTO',
+                    description: 'Chief Technology Officer',
+                    metrics: { Teams: '3', Staff: '50' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'dev_lead', 
+                    parent: 'tech',
+                    nodeType: 'user', 
+                    title: 'Dev Lead',
+                    description: 'Development Team Leader',
+                    metrics: { Projects: '5', Team: '15' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'qa_lead', 
+                    parent: 'tech',
+                    nodeType: 'user', 
+                    title: 'QA Lead',
+                    description: 'Quality Assurance Leader',
+                    metrics: { Tests: '500', Team: '8' }
+                }},
+                
+                { group: 'nodes', data: { id: 'ops', label: 'Operations' } },
+                { group: 'nodes', data: { 
+                    id: 'coo', 
+                    parent: 'ops',
+                    nodeType: 'user', 
+                    title: 'COO',
+                    description: 'Chief Operating Officer',
+                    metrics: { Process: '25', KPIs: '15' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'ops_mgr', 
+                    parent: 'ops',
+                    nodeType: 'user', 
+                    title: 'Ops Manager',
+                    description: 'Operations Manager',
+                    metrics: { Sites: '3', Staff: '30' }
+                }},
+                
+                // Edges
+                { group: 'edges', data: { source: 'ceo', target: 'cto', label: 'Reports to' } },
+                { group: 'edges', data: { source: 'ceo', target: 'coo', label: 'Reports to' } },
+                { group: 'edges', data: { source: 'cto', target: 'dev_lead', label: 'Manages' } },
+                { group: 'edges', data: { source: 'cto', target: 'qa_lead', label: 'Manages' } },
+                { group: 'edges', data: { source: 'coo', target: 'ops_mgr', label: 'Manages' } },
+                { group: 'edges', data: { source: 'dev_lead', target: 'qa_lead', label: 'Collaborates' } }
+            ];
+        }
+        
+        // Sample dataset: System Architecture
+        function getSystemArchitectureData() {
+            return [
+                // Frontend Layer
+                { group: 'nodes', data: { id: 'frontend_group', label: 'Frontend Layer' } },
+                { group: 'nodes', data: { 
+                    id: 'web_app', 
+                    parent: 'frontend_group',
+                    nodeType: 'system', 
+                    title: 'Web Application',
+                    description: 'React-based SPA',
+                    metrics: { Users: '10k', Load: '45%' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'mobile_app', 
+                    parent: 'frontend_group',
+                    nodeType: 'system', 
+                    title: 'Mobile App',
+                    description: 'Flutter cross-platform',
+                    metrics: { iOS: '6k', Android: '8k' }
+                }},
+                
+                // API Layer
+                { group: 'nodes', data: { id: 'api_group', label: 'API Gateway' } },
+                { group: 'nodes', data: { 
+                    id: 'api_gateway', 
+                    parent: 'api_group',
+                    nodeType: 'api', 
+                    title: 'API Gateway',
+                    description: 'Kong API Gateway',
+                    metrics: { RPS: '5k', Latency: '12ms' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'auth_service', 
+                    parent: 'api_group',
+                    nodeType: 'api', 
+                    title: 'Auth Service',
+                    description: 'OAuth 2.0 / JWT',
+                    metrics: { Active: '8k', TTL: '1h' }
+                }},
+                
+                // Backend Services
+                { group: 'nodes', data: { id: 'backend_group', label: 'Microservices' } },
+                { group: 'nodes', data: { 
+                    id: 'user_service', 
+                    parent: 'backend_group',
+                    nodeType: 'system', 
+                    title: 'User Service',
+                    description: 'User management',
+                    metrics: { Golang: '✓', gRPC: '✓' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'order_service', 
+                    parent: 'backend_group',
+                    nodeType: 'system', 
+                    title: 'Order Service',
+                    description: 'Order processing',
+                    metrics: { Orders: '500/h', Queue: '12' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'notification', 
+                    parent: 'backend_group',
+                    nodeType: 'system', 
+                    title: 'Notification Service',
+                    description: 'Email/SMS/Push',
+                    metrics: { Sent: '10k/d', Failed: '0.1%' }
+                }},
+                
+                // Data Layer
+                { group: 'nodes', data: { id: 'data_group', label: 'Data Persistence' } },
+                { group: 'nodes', data: { 
+                    id: 'postgres', 
+                    parent: 'data_group',
+                    nodeType: 'data', 
+                    title: 'PostgreSQL',
+                    description: 'Primary database',
+                    metrics: { Size: '500GB', Tables: '45' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 'redis', 
+                    parent: 'data_group',
+                    nodeType: 'data', 
+                    title: 'Redis Cache',
+                    description: 'In-memory cache',
+                    metrics: { Hit: '95%', TTL: '5m' }
+                }},
+                { group: 'nodes', data: { 
+                    id: 's3', 
+                    parent: 'data_group',
+                    nodeType: 'data', 
+                    title: 'S3 Storage',
+                    description: 'File storage',
+                    metrics: { Files: '2M', Size: '5TB' }
+                }},
+                
+                // Edges
+                { group: 'edges', data: { source: 'web_app', target: 'api_gateway', label: 'HTTPS' } },
+                { group: 'edges', data: { source: 'mobile_app', target: 'api_gateway', label: 'HTTPS' } },
+                { group: 'edges', data: { source: 'api_gateway', target: 'auth_service', label: 'Verify' } },
+                { group: 'edges', data: { source: 'api_gateway', target: 'user_service', label: 'Route' } },
+                { group: 'edges', data: { source: 'api_gateway', target: 'order_service', label: 'Route' } },
+                { group: 'edges', data: { source: 'user_service', target: 'postgres', label: 'Query' } },
+                { group: 'edges', data: { source: 'user_service', target: 'redis', label: 'Cache' } },
+                { group: 'edges', data: { source: 'order_service', target: 'postgres', label: 'Query' } },
+                { group: 'edges', data: { source: 'order_service', target: 'notification', label: 'Trigger' } },
+                { group: 'edges', data: { source: 'notification', target: 's3', label: 'Templates' } }
+            ];
+        }
+        
+        // Sample dataset: Complex Diagram
+        function getComplexDiagramData() {
+            const nodes = [];
+            const edges = [];
+            
+            // Create a complex network with multiple groups
+            const groups = ['Analytics', 'Processing', 'Storage', 'External'];
+            const nodeTypes = ['process', 'data', 'api', 'system'];
+            
+            // Create groups
+            groups.forEach(group => {
+                nodes.push({ 
+                    group: 'nodes', 
+                    data: { 
+                        id: `group_${group}`, 
+                        label: group 
+                    } 
+                });
+            });
+            
+            // Create nodes in each group
+            let nodeId = 0;
+            groups.forEach((group, groupIndex) => {
+                for (let i = 0; i < 5; i++) {
+                    const id = `node_${nodeId++}`;
+                    const type = nodeTypes[Math.floor(Math.random() * nodeTypes.length)];
+                    
+                    nodes.push({
+                        group: 'nodes',
+                        data: {
+                            id: id,
+                            parent: `group_${group}`,
+                            nodeType: type,
+                            title: `${group} ${type} ${i}`,
+                            description: `Handles ${group.toLowerCase()} operations`,
+                            metrics: {
+                                Load: `${Math.floor(Math.random() * 100)}%`,
+                                Queue: Math.floor(Math.random() * 50)
+                            }
+                        },
+                        classes: type
+                    });
+                }
+            });
+            
+            // Create edges between nodes
+            for (let i = 0; i < 20; i++) {
+                const source = `node_${Math.floor(Math.random() * nodeId)}`;
+                const target = `node_${Math.floor(Math.random() * nodeId)}`;
+                
+                if (source !== target) {
+                    edges.push({
+                        group: 'edges',
+                        data: {
+                            source: source,
+                            target: target,
+                            label: `Flow ${i}`
+                        }
+                    });
+                }
+            }
+            
+            return [...nodes, ...edges];
+        }
+        
+        // Layout functions
+        function applyLayout(layoutName) {
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+    
+            const layouts = {
+                dagre: {
+                    name: 'dagre',
+                    rankDir: 'TB',
+                    animate: true,
+                    animationDuration: 500,
+                    fit: true,
+                    padding: 50,
+                    nodeDimensionsIncludeLabels: true,
+                    spacingFactor: 1.5
+                },
+                breadthfirst: {
+                    name: 'breadthfirst',
+                    directed: true,
+                    animate: true,
+                    animationDuration: 500,
+                    fit: true,
+                    padding: 50,
+                    spacingFactor: 1.5
+                },
+                cola: {
+                    name: 'cola',
+                    animate: true,
+                    randomize: false,
+                    fit: true,
+                    padding: 50,
+                    nodeSpacing: 50,
+                    edgeLength: 150
+                },
+                grid: {
+                    name: 'grid',
+                    animate: true,
+                    fit: true,
+                    padding: 50,
+                    rows: 3
+                },
+                circle: {
+                    name: 'circle',
+                    animate: true,
+                    fit: true,
+                    padding: 50
+                }
+            };
+            
+            cy.layout(layouts[layoutName]).run();
+        }
+        
+        // UI Functions
+        function showNodeInfo(node) {
+            const data = node.data();
+            document.getElementById('nodeId').textContent = data.id;
+            document.getElementById('nodeType').textContent = data.nodeType || 'standard';
+            document.getElementById('nodeStatus').textContent = data.status || 'active';
+            document.getElementById('nodeGroup').textContent = data.parent || 'none';
+            
+            const incomingEdges = node.incomers('edge').length;
+            const outgoingEdges = node.outgoers('edge').length;
+            document.getElementById('nodeConnections').textContent = 
+                `${incomingEdges} in, ${outgoingEdges} out`;
+            
+            document.getElementById('infoPanel').classList.add('active');
+        }
+        
+        
+function fitToScreen() {
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+    cy.fit();
+}
+
+function zoomIn() {
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+    cy.zoom(cy.zoom() * 1.2);
+}
+
+function zoomOut() {
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+    cy.zoom(cy.zoom() * 0.8);
+}
+
+function closeInfoPanel() {
+            document.getElementById('infoPanel').classList.remove('active');
+        }
+        
+        function toggleGroups() {
+            const parents = cy.nodes(':parent');
+            if (parents.style('display') === 'none') {
+                parents.style('display', 'element');
+            } else {
+                parents.style('display', 'none');
+            }
+        }
+        
+        function exportJSON() {
+            const jsonData = {
+                nodes: cy.nodes().map(n => n.data()),
+                edges: cy.edges().map(e => e.data())
+            };
+            
+            const dataStr = JSON.stringify(jsonData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'cytoscape-flowchart.json';
+            link.click();
+            
+            console.log('Exported JSON:', jsonData);
+            alert('JSON exported! Check console and downloads.');
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            initCytoscape();
+            loadDataset('workflow');
+        });
+    </script>
+</body>
+</html>

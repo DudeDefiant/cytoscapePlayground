@@ -1,0 +1,364 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    overflow: hidden;
+}
+
+/* Cytoscape Container */
+#cy {
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* Control Panel */
+.controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-width: 300px;
+}
+
+.controls .heading {
+    margin-bottom: 15px;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 5px;
+}
+
+.btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.layout-buttons button {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.data-buttons button {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.view-buttons button {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.json-buttons button {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Info Panel */
+.info-panel {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-width: 300px;
+    display: none;
+}
+
+.info-panel.active {
+    display: block;
+}
+
+.info-panel h4 {
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.info-panel p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+/* JSON Editor Modal */
+.json-editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.json-editor-modal.active {
+    display: flex;
+}
+
+.json-editor-content {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.json-editor-content h3 {
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.json-editor-textarea {
+    width: 100%;
+    min-height: 400px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    resize: vertical;
+    margin-bottom: 20px;
+}
+
+.json-editor-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.json-editor-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.json-editor-actions button {
+    min-width: 100px;
+}
+
+.json-error {
+    color: #f44336;
+    background: #ffebee;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.json-error.active {
+    display: block;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    border: 2px dashed #667eea;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-upload-area:hover {
+    background: #f5f5f5;
+    border-color: #764ba2;
+}
+
+.file-upload-area input[type="file"] {
+    display: none;
+}
+
+.file-upload-label {
+    color: #667eea;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Custom node HTML templates */
+.node-html-label {
+    background: white;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    width: 200px;  /* Fixed width to match Cytoscape node dimensions */
+    max-width: 200px;
+    max-height: 90px;  /* Fixed height to prevent overflow */
+    font-size: 11px;
+    overflow: hidden;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    pointer-events: none;  /* Prevent HTML from extending clickable area */
+    display: flex;
+    flex-direction: column;
+}
+
+.node-process {
+    border-left: 4px solid #4CAF50;
+}
+
+.node-decision {
+    border-left: 4px solid #FF9800;
+}
+
+.node-data {
+    border-left: 4px solid #2196F3;
+}
+
+.node-terminal {
+    border-left: 4px solid #9C27B0;
+}
+
+.node-user {
+    border-left: 4px solid #FF5722;
+}
+
+.node-system {
+    border-left: 4px solid #607D8B;
+}
+
+.node-api {
+    border-left: 4px solid #00BCD4;
+}
+
+.node-icon {
+    font-size: 16px;
+    margin-bottom: 4px;
+    display: block;
+    text-align: center;
+    line-height: 1;
+    flex-shrink: 0;  /* Don't shrink icon */
+}
+
+.node-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 3px;
+    font-size: 11px;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;  /* Limit title to 2 lines */
+    -webkit-box-orient: vertical;
+    flex-shrink: 0;  /* Don't shrink title */
+}
+
+.node-description {
+    color: #666;
+    font-size: 9px;
+    line-height: 1.3;
+    margin-top: 2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-height: 26px;  /* Reduced to fit in container */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;  /* Reduced from 4 to 2 lines */
+    -webkit-box-orient: vertical;
+    flex-shrink: 1;  /* Allow description to shrink */
+}
+
+.node-metrics {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid #eee;
+    flex-wrap: wrap;
+    gap: 3px;
+    flex-shrink: 1;  /* Allow metrics to shrink */
+    overflow: hidden;
+    max-height: 30px;  /* Limit metrics height */
+}
+
+.metric {
+    text-align: center;
+    flex: 1;
+    min-width: 35px;
+    overflow: hidden;
+}
+
+.metric-value {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 10px;
+    line-height: 1.1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.metric-label {
+    font-size: 8px;
+    color: #999;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Loading overlay */
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2000;
+}
+
+.loading i {
+    font-size: 48px;
+    color: #667eea;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+

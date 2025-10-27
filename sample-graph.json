@@ -1,0 +1,105 @@
+{
+  "elements": [
+    {
+      "group": "nodes",
+      "data": {
+        "id": "start",
+        "nodeType": "terminal",
+        "title": "Start",
+        "description": "Begin process",
+        "metrics": {
+          "Status": "✓"
+        }
+      },
+      "classes": "terminal"
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "process1",
+        "nodeType": "process",
+        "title": "Process Data",
+        "description": "Transform and validate input",
+        "metrics": {
+          "Speed": "Fast",
+          "Load": "Low"
+        }
+      },
+      "classes": "process"
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "decision1",
+        "nodeType": "decision",
+        "title": "Check Status",
+        "description": "Validate processing result",
+        "metrics": {
+          "Pass": "90%",
+          "Fail": "10%"
+        }
+      },
+      "classes": "decision"
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "database",
+        "nodeType": "data",
+        "title": "Database",
+        "description": "Store results",
+        "metrics": {
+          "Size": "100GB",
+          "Type": "SQL"
+        }
+      },
+      "classes": "data"
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "end",
+        "nodeType": "terminal",
+        "title": "Complete",
+        "description": "Process finished",
+        "metrics": {
+          "Status": "✓"
+        }
+      },
+      "classes": "terminal"
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "start",
+        "target": "process1",
+        "label": "Initialize"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "process1",
+        "target": "decision1",
+        "label": "Validate"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "decision1",
+        "target": "database",
+        "label": "Success"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database",
+        "target": "end",
+        "label": "Complete"
+      }
+    }
+  ]
+}
+
