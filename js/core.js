@@ -254,5 +254,13 @@ function getCyInstance() {
 function registerExtensions() {
     cytoscape.use(cytoscapeDagre);
     cytoscape.use(cytoscapeCola);
+
+    // Register SVG export extension
+    if (typeof cytoscapeSvg !== 'undefined') {
+        cytoscape.use(cytoscapeSvg);
+        console.log('SVG export extension registered');
+    } else {
+        console.warn('cytoscape-svg extension not loaded');
+    }
 }
 

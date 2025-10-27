@@ -16,6 +16,10 @@
     <script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape-node-html-label@1.2.2/dist/cytoscape-node-html-label.min.js"></script>
+
+    <!-- SVG Export Extension -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas2svg@1.0.19/canvas2svg.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-svg@0.4.0/cytoscape-svg.min.js"></script>
 </head>
 <body>
     <!-- Main Cytoscape Container -->
@@ -53,9 +57,15 @@
             <button onclick="zoomOut()">Zoom Out</button>
         </div>
         
+        <div class="btn-group export-buttons">
+            <h4>💾 Export</h4>
+            <button onclick="exportPNG()">Export PNG</button>
+            <button onclick="exportSVG()">Export SVG</button>
+            <button onclick="exportGraphJSON()">Export JSON</button>
+        </div>
+
         <div class="btn-group json-buttons">
             <h4>📝 JSON Editor</h4>
-            <button onclick="exportGraphJSON()">Export JSON</button>
             <button onclick="openJSONEditor()">Edit JSON</button>
             <button onclick="triggerFileUpload()">Import JSON File</button>
         </div>
