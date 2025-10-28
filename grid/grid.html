@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid-Based Flowchart - Modified Sugiyama Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 20px;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        select {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            overflow: auto;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+        }
+
+        #flowchartCanvas {
+            display: block;
+            cursor: grab;
+        }
+
+        #flowchartCanvas:active {
+            cursor: grabbing;
+        }
+
+        .info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            color: #2d3748;
+            font-size: 28px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-left: auto;
+            font-size: 13px;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎯 Grid-Based Flowchart with Modified Sugiyama Layout</h1>
+
+    <div class="controls">
+        <button onclick="loadExample('complex')">Complex Process</button>
+        <button onclick="loadExample('decision')">Decision Tree</button>
+        <button onclick="loadExample('parallel')">Parallel Process</button>
+        <button onclick="toggleGrid()">Toggle Grid</button>
+        <button onclick="toggleDebug()">Toggle Debug Info</button>
+
+        <select id="layoutDirection" onchange="changeDirection()">
+            <option value="TB">Top to Bottom</option>
+            <option value="LR">Left to Right</option>
+        </select>
+
+        <div class="stats">
+            <span>Nodes: <strong id="nodeCount">0</strong></span>
+            <span>Edges: <strong id="edgeCount">0</strong></span>
+            <span>Crossings: <strong id="crossingCount">0</strong></span>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="flowchartCanvas"></canvas>
+        <div class="info" id="info"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #48bb78;"></div>
+            <span>Start/End</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4299e1;"></div>
+            <span>Process</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ed8936;"></div>
+            <span>Decision</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #9f7aea;"></div>
+            <span>Sub-Process</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #f56565;"></div>
+            <span>Error Handler</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #38b2ac;"></div>
+            <span>Data Operation</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ====================================
+    // Modified Sugiyama Grid Layout Engine
+    // ====================================
+
+    class GridFlowchartLayout {
+        constructor(options = {}) {
+            this.cellWidth = options.cellWidth || 180;
+            this.cellHeight = options.cellHeight || 100;
+            this.padding = options.padding || 20;
+            this.direction = options.direction || 'TB';
+            this.gridVisible = options.gridVisible !== false;
+            this.debugMode = options.debugMode || false;
+        }
+
+        computeLayout(nodes, edges) {
+            console.log('Computing layout for', nodes.length, 'nodes');
+
+            // Build adjacency lists
+            const graph = this.buildGraph(nodes, edges);
+
+            // Detect cycles and create DAG
+            const dag = this.removeCycles(graph, edges);
+
+            // Assign layers using longest path
+            const layers = this.assignLayers(dag.graph, dag.edges);
+
+            // Add dummy nodes for long edges
+            const extended = this.addDummyNodes(layers, dag.edges);
+
+            // Minimize crossings
+            const ordered = this.minimizeCrossings(extended.layers, extended.edges);
+
+            // Assign to grid positions
+            const positions = this.assignToGrid(ordered);
+
+            // Route edges
+            const routes = this.routeEdges(positions, extended.edges);
+
+            return {
+                positions,
+                routes,
+                layers: ordered,
+                crossings: this.countCrossings(ordered, extended.edges)
+            };
+        }
+
+        buildGraph(nodes, edges) {
+            const graph = {};
+
+            nodes.forEach(node => {
+                graph[node.id] = {
+                    ...node,
+                    incoming: [],
+                    outgoing: []
+                };
+            });
+
+            edges.forEach(edge => {
+                if (graph[edge.from] && graph[edge.to]) {
+                    graph[edge.from].outgoing.push(edge.to);
+                    graph[edge.to].incoming.push(edge.from);
+                }
+            });
+
+            return graph;
+        }
+
+        removeCycles(graph, edges) {
+            // Simple cycle removal - reverse back edges
+            const visited = new Set();
+            const recursionStack = new Set();
+            const reversedEdges = [];
+            const newEdges = [];
+
+            const hasCycle = (node, parent = null) => {
+                visited.add(node);
+                recursionStack.add(node);
+
+                for (const neighbor of graph[node].outgoing) {
+                    if (!visited.has(neighbor)) {
+                        if (hasCycle(neighbor, node)) return true;
+                    } else if (recursionStack.has(neighbor)) {
+                        // Found a back edge - reverse it
+                        reversedEdges.push({from: node, to: neighbor});
+                        return true;
+                    }
+                }
+
+                recursionStack.delete(node);
+                return false;
+            };
+
+            // Check all nodes
+            Object.keys(graph).forEach(node => {
+                if (!visited.has(node)) {
+                    hasCycle(node);
+                }
+            });
+
+            // Create new edge list with reversed edges
+            edges.forEach(edge => {
+                const isReversed = reversedEdges.some(
+                    r => r.from === edge.from && r.to === edge.to
+                );
+
+                if (isReversed) {
+                    newEdges.push({
+                        ...edge,
+                        from: edge.to,
+                        to: edge.from,
+                        reversed: true
+                    });
+                } else {
+                    newEdges.push(edge);
+                }
+            });
+
+            // Rebuild graph with cycle-free edges
+            const dagGraph = {};
+            Object.keys(graph).forEach(node => {
+                dagGraph[node] = {...graph[node], incoming: [], outgoing: []};
+            });
+
+            newEdges.forEach(edge => {
+                dagGraph[edge.from].outgoing.push(edge.to);
+                dagGraph[edge.to].incoming.push(edge.from);
+            });
+
+            return {graph: dagGraph, edges: newEdges};
+        }
+
+        assignLayers(graph, edges) {
+            const layers = [];
+            const nodeLayer = {};
+
+            // Find root nodes (no incoming edges)
+            const roots = Object.keys(graph).filter(
+                node => graph[node].incoming.length === 0
+            );
+
+            if (roots.length === 0) {
+                // If no roots (shouldn't happen after cycle removal), pick one
+                roots.push(Object.keys(graph)[0]);
+            }
+
+            // Use longest path to assign layers
+            const visited = new Set();
+            const queue = roots.map(r => ({node: r, layer: 0}));
+
+            while (queue.length > 0) {
+                const {node, layer} = queue.shift();
+
+                // Assign to deepest layer
+                nodeLayer[node] = Math.max(nodeLayer[node] || 0, layer);
+
+                // Add unvisited children
+                graph[node].outgoing.forEach(child => {
+                    queue.push({node: child, layer: layer + 1});
+                });
+            }
+
+            // Group nodes by layer
+            Object.keys(nodeLayer).forEach(node => {
+                const layer = nodeLayer[node];
+                layers[layer] = layers[layer] || [];
+                layers[layer].push(node);
+            });
+
+            return layers;
+        }
+
+        addDummyNodes(layers, edges) {
+            const extendedLayers = layers.map(layer => [...layer]);
+            const extendedEdges = [];
+            let dummyCounter = 0;
+
+            // Find layer index for each node
+            const nodeToLayer = {};
+            layers.forEach((layer, index) => {
+                layer.forEach(node => {
+                    nodeToLayer[node] = index;
+                });
+            });
+
+            // Process each edge
+            edges.forEach(edge => {
+                const fromLayer = nodeToLayer[edge.from];
+                const toLayer = nodeToLayer[edge.to];
+
+                if (toLayer - fromLayer <= 1) {
+                    // Direct connection
+                    extendedEdges.push(edge);
+                } else {
+                    // Need dummy nodes
+                    let currentNode = edge.from;
+
+                    for (let layer = fromLayer + 1; layer < toLayer; layer++) {
+                        const dummyNode = `dummy_${dummyCounter++}`;
+                        extendedLayers[layer].push(dummyNode);
+
+                        extendedEdges.push({
+                            from: currentNode,
+                            to: dummyNode,
+                            isDummy: true,
+                            originalEdge: edge
+                        });
+
+                        currentNode = dummyNode;
+                    }
+
+                    extendedEdges.push({
+                        from: currentNode,
+                        to: edge.to,
+                        ...edge
+                    });
+                }
+            });
+
+            return {layers: extendedLayers, edges: extendedEdges};
+        }
+
+        minimizeCrossings(layers, edges) {
+            // Barycentric method with multiple passes
+            const maxIterations = 10;
+            let bestLayers = layers.map(l => [...l]);
+            let bestCrossings = this.countCrossings(bestLayers, edges);
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                const newLayers = bestLayers.map(l => [...l]);
+
+                // Forward pass
+                for (let i = 1; i < newLayers.length; i++) {
+                    newLayers[i] = this.orderLayer(
+                        newLayers[i],
+                        newLayers[i-1],
+                        edges,
+                        'forward'
+                    );
+                }
+
+                // Backward pass
+                for (let i = newLayers.length - 2; i >= 0; i--) {
+                    newLayers[i] = this.orderLayer(
+                        newLayers[i],
+                        newLayers[i+1],
+                        edges,
+                        'backward'
+                    );
+                }
+
+                const crossings = this.countCrossings(newLayers, edges);
+                if (crossings < bestCrossings) {
+                    bestLayers = newLayers;
+                    bestCrossings = crossings;
+                }
+
+                if (crossings === 0) break;
+            }
+
+            return bestLayers;
+        }
+
+        orderLayer(layer, referenceLayer, edges, direction) {
+            const positions = {};
+
+            layer.forEach(node => {
+                const connected = [];
+
+                edges.forEach(edge => {
+                    if (direction === 'forward' && edge.to === node) {
+                        const pos = referenceLayer.indexOf(edge.from);
+                        if (pos !== -1) connected.push(pos);
+                    } else if (direction === 'backward' && edge.from === node) {
+                        const pos = referenceLayer.indexOf(edge.to);
+                        if (pos !== -1) connected.push(pos);
+                    }
+                });
+
+                if (connected.length > 0) {
+                    positions[node] = connected.reduce((a, b) => a + b, 0) / connected.length;
+                } else {
+                    positions[node] = referenceLayer.length / 2;
+                }
+            });
+
+            return layer.sort((a, b) => positions[a] - positions[b]);
+        }
+
+        countCrossings(layers, edges) {
+            let crossings = 0;
+
+            for (let i = 0; i < layers.length - 1; i++) {
+                const layer1 = layers[i];
+                const layer2 = layers[i + 1];
+
+                const layerEdges = edges.filter(e =>
+                    layer1.includes(e.from) && layer2.includes(e.to)
+                );
+
+                for (let j = 0; j < layerEdges.length; j++) {
+                    for (let k = j + 1; k < layerEdges.length; k++) {
+                        const e1 = layerEdges[j];
+                        const e2 = layerEdges[k];
+
+                        const e1FromPos = layer1.indexOf(e1.from);
+                        const e1ToPos = layer2.indexOf(e1.to);
+                        const e2FromPos = layer1.indexOf(e2.from);
+                        const e2ToPos = layer2.indexOf(e2.to);
+
+                        if ((e1FromPos < e2FromPos && e1ToPos > e2ToPos) ||
+                            (e1FromPos > e2FromPos && e1ToPos < e2ToPos)) {
+                            crossings++;
+                        }
+                    }
+                }
+            }
+
+            return crossings;
+        }
+
+        assignToGrid(layers) {
+            const positions = {};
+
+            if (this.direction === 'TB') {
+                // Top to Bottom
+                layers.forEach((layer, layerIndex) => {
+                    const maxWidth = Math.max(...layers.map(l => l.length));
+                    const startCol = Math.floor((maxWidth - layer.length) / 2);
+
+                    layer.forEach((node, nodeIndex) => {
+                        if (!node.startsWith('dummy_')) {
+                            positions[node] = {
+                                row: layerIndex,
+                                col: startCol + nodeIndex,
+                                x: (startCol + nodeIndex) * this.cellWidth + this.cellWidth / 2,
+                                y: layerIndex * this.cellHeight + this.cellHeight / 2,
+                                gridX: startCol + nodeIndex,
+                                gridY: layerIndex
+                            };
+                        }
+                    });
+                });
+            } else {
+                // Left to Right
+                layers.forEach((layer, layerIndex) => {
+                    const maxHeight = Math.max(...layers.map(l => l.length));
+                    const startRow = Math.floor((maxHeight - layer.length) / 2);
+
+                    layer.forEach((node, nodeIndex) => {
+                        if (!node.startsWith('dummy_')) {
+                            positions[node] = {
+                                row: startRow + nodeIndex,
+                                col: layerIndex,
+                                x: layerIndex * this.cellWidth + this.cellWidth / 2,
+                                y: (startRow + nodeIndex) * this.cellHeight + this.cellHeight / 2,
+                                gridX: layerIndex,
+                                gridY: startRow + nodeIndex
+                            };
+                        }
+                    });
+                });
+            }
+
+            return positions;
+        }
+
+        routeEdges(positions, edges) {
+            const routes = [];
+
+            edges.forEach(edge => {
+                if (edge.from.startsWith('dummy_') || edge.to.startsWith('dummy_')) {
+                    return; // Skip dummy edges for now
+                }
+
+                const fromPos = positions[edge.from];
+                const toPos = positions[edge.to];
+
+                if (!fromPos || !toPos) return;
+
+                // Simple straight line routing for now
+                // In production, you'd use orthogonal routing
+                routes.push({
+                    ...edge,
+                    points: [
+                        {x: fromPos.x, y: fromPos.y},
+                        {x: toPos.x, y: toPos.y}
+                    ]
+                });
+            });
+
+            return routes;
+        }
+    }
+
+    // ====================================
+    // Flowchart Renderer
+    // ====================================
+
+    class FlowchartRenderer {
+        constructor(canvas) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.layout = null;
+            this.data = null;
+            this.showGrid = true;
+            this.showDebug = false;
+        }
+
+        render(data, layout) {
+            this.data = data;
+            this.layout = layout;
+
+            // Set canvas size
+            const maxX = Math.max(...Object.values(layout.positions).map(p => p.x)) + 100;
+            const maxY = Math.max(...Object.values(layout.positions).map(p => p.y)) + 100;
+
+            this.canvas.width = Math.max(maxX, 1200);
+            this.canvas.height = Math.max(maxY, 800);
+
+            // Clear canvas
+            this.ctx.fillStyle = '#fafafa';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Draw grid
+            if (this.showGrid) {
+                this.drawGrid();
+            }
+
+            // Draw edges
+            layout.routes.forEach(route => {
+                this.drawEdge(route);
+            });
+
+            // Draw nodes
+            Object.keys(layout.positions).forEach(nodeId => {
+                const node = data.nodes.find(n => n.id === nodeId);
+                if (node) {
+                    this.drawNode(node, layout.positions[nodeId]);
+                }
+            });
+
+            // Update stats
+            document.getElementById('nodeCount').textContent = data.nodes.length;
+            document.getElementById('edgeCount').textContent = data.edges.length;
+            document.getElementById('crossingCount').textContent = layout.crossings;
+        }
+
+        drawGrid() {
+            const ctx = this.ctx;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            const cellWidth = this.layout.cellWidth || 180;
+            const cellHeight = this.layout.cellHeight || 100;
+
+            // Vertical lines
+            for (let x = 0; x < this.canvas.width; x += cellWidth) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, this.canvas.height);
+                ctx.stroke();
+            }
+
+            // Horizontal lines
+            for (let y = 0; y < this.canvas.height; y += cellHeight) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(this.canvas.width, y);
+                ctx.stroke();
+            }
+
+            ctx.setLineDash([]);
+        }
+
+        drawNode(node, position) {
+            const ctx = this.ctx;
+            const width = 140;
+            const height = 60;
+            const x = position.x - width / 2;
+            const y = position.y - height / 2;
+
+            // Node colors by type
+            const colors = {
+                start: '#48bb78',
+                end: '#48bb78',
+                process: '#4299e1',
+                decision: '#ed8936',
+                subprocess: '#9f7aea',
+                error: '#f56565',
+                data: '#38b2ac'
+            };
+
+            const color = colors[node.type] || '#718096';
+
+            // Draw shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(x + 3, y + 3, width, height);
+
+            // Draw node background
+            ctx.fillStyle = color;
+
+            if (node.type === 'decision') {
+                // Draw diamond
+                ctx.beginPath();
+                ctx.moveTo(position.x, y);
+                ctx.lineTo(x + width, position.y);
+                ctx.lineTo(position.x, y + height);
+                ctx.lineTo(x, position.y);
+                ctx.closePath();
+                ctx.fill();
+            } else if (node.type === 'start' || node.type === 'end') {
+                // Draw rounded rectangle
+                this.drawRoundedRect(x, y, width, height, 30);
+                ctx.fill();
+            } else {
+                // Draw rectangle
+                this.drawRoundedRect(x, y, width, height, 8);
+                ctx.fill();
+            }
+
+            // Draw border
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.lineWidth = 2;
+
+            if (node.type === 'decision') {
+                ctx.beginPath();
+                ctx.moveTo(position.x, y);
+                ctx.lineTo(x + width, position.y);
+                ctx.lineTo(position.x, y + height);
+                ctx.lineTo(x, position.y);
+                ctx.closePath();
+                ctx.stroke();
+            } else if (node.type === 'start' || node.type === 'end') {
+                this.drawRoundedRect(x, y, width, height, 30);
+                ctx.stroke();
+            } else {
+                this.drawRoundedRect(x, y, width, height, 8);
+                ctx.stroke();
+            }
+
+            // Draw text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Handle multi-line text
+            const lines = node.label.split('\n');
+            if (lines.length === 1) {
+                ctx.fillText(node.label, position.x, position.y);
+            } else {
+                const lineHeight = 16;
+                const startY = position.y - (lines.length - 1) * lineHeight / 2;
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, position.x, startY + i * lineHeight);
+                });
+            }
+
+            // Draw debug info
+            if (this.showDebug) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.font = '10px Arial';
+                ctx.fillText(`(${position.gridX}, ${position.gridY})`, position.x, y - 5);
+            }
+        }
+
+        drawEdge(route) {
+            const ctx = this.ctx;
+            const points = route.points;
+
+            if (points.length < 2) return;
+
+            // Draw line
+            ctx.strokeStyle = route.reversed ? '#f56565' : '#4a5568';
+            ctx.lineWidth = 2;
+            ctx.setLineDash(route.reversed ? [5, 5] : []);
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw arrowhead
+            const last = points[points.length - 1];
+            const prev = points[points.length - 2];
+            const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+
+            const arrowLength = 10;
+            const arrowAngle = Math.PI / 6;
+
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(
+                last.x - arrowLength * Math.cos(angle - arrowAngle),
+                last.y - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.lineTo(
+                last.x - arrowLength * Math.cos(angle + arrowAngle),
+                last.y - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw label if exists
+            if (route.label) {
+                const midX = (points[0].x + last.x) / 2;
+                const midY = (points[0].y + last.y) / 2;
+
+                ctx.fillStyle = 'white';
+                ctx.fillRect(midX - 20, midY - 10, 40, 20);
+
+                ctx.fillStyle = '#4a5568';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(route.label, midX, midY);
+            }
+        }
+
+        drawRoundedRect(x, y, width, height, radius) {
+            const ctx = this.ctx;
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+    }
+
+    // ====================================
+    // Example Flowchart Data
+    // ====================================
+
+    const examples = {
+        complex: {
+            nodes: [
+                {id: 'start', type: 'start', label: 'Start'},
+                {id: 'input', type: 'data', label: 'Read Input\nData'},
+                {id: 'validate', type: 'process', label: 'Validate\nData'},
+                {id: 'check_valid', type: 'decision', label: 'Valid?'},
+                {id: 'transform', type: 'process', label: 'Transform\nData'},
+                {id: 'parallel1', type: 'subprocess', label: 'Process\nStream A'},
+                {id: 'parallel2', type: 'subprocess', label: 'Process\nStream B'},
+                {id: 'parallel3', type: 'subprocess', label: 'Process\nStream C'},
+                {id: 'merge', type: 'process', label: 'Merge\nResults'},
+                {id: 'quality_check', type: 'decision', label: 'Quality\nOK?'},
+                {id: 'store', type: 'data', label: 'Store in\nDatabase'},
+                {id: 'notify', type: 'process', label: 'Send\nNotification'},
+                {id: 'error_handler', type: 'error', label: 'Handle\nError'},
+                {id: 'retry_check', type: 'decision', label: 'Retry?'},
+                {id: 'log_error', type: 'error', label: 'Log Error'},
+                {id: 'cleanup', type: 'process', label: 'Cleanup\nResources'},
+                {id: 'end', type: 'end', label: 'End'}
+            ],
+            edges: [
+                {from: 'start', to: 'input'},
+                {from: 'input', to: 'validate'},
+                {from: 'validate', to: 'check_valid'},
+                {from: 'check_valid', to: 'transform', label: 'Yes'},
+                {from: 'check_valid', to: 'error_handler', label: 'No'},
+                {from: 'transform', to: 'parallel1'},
+                {from: 'transform', to: 'parallel2'},
+                {from: 'transform', to: 'parallel3'},
+                {from: 'parallel1', to: 'merge'},
+                {from: 'parallel2', to: 'merge'},
+                {from: 'parallel3', to: 'merge'},
+                {from: 'merge', to: 'quality_check'},
+                {from: 'quality_check', to: 'store', label: 'Pass'},
+                {from: 'quality_check', to: 'error_handler', label: 'Fail'},
+                {from: 'store', to: 'notify'},
+                {from: 'notify', to: 'cleanup'},
+                {from: 'error_handler', to: 'retry_check'},
+                {from: 'retry_check', to: 'input', label: 'Yes'},
+                {from: 'retry_check', to: 'log_error', label: 'No'},
+                {from: 'log_error', to: 'cleanup'},
+                {from: 'cleanup', to: 'end'}
+            ]
+        },
+
+        decision: {
+            nodes: [
+                {id: 'start', type: 'start', label: 'Request\nReceived'},
+                {id: 'auth', type: 'decision', label: 'Authenticated?'},
+                {id: 'check_role', type: 'decision', label: 'Check\nRole'},
+                {id: 'admin_panel', type: 'process', label: 'Admin\nDashboard'},
+                {id: 'user_panel', type: 'process', label: 'User\nDashboard'},
+                {id: 'guest_panel', type: 'process', label: 'Guest\nView'},
+                {id: 'login', type: 'process', label: 'Show\nLogin'},
+                {id: 'verify', type: 'process', label: 'Verify\nCredentials'},
+                {id: 'check_2fa', type: 'decision', label: '2FA\nEnabled?'},
+                {id: 'send_2fa', type: 'process', label: 'Send 2FA\nCode'},
+                {id: 'verify_2fa', type: 'process', label: 'Verify\n2FA'},
+                {id: 'access_granted', type: 'process', label: 'Grant\nAccess'},
+                {id: 'access_denied', type: 'error', label: 'Access\nDenied'},
+                {id: 'end', type: 'end', label: 'Complete'}
+            ],
+            edges: [
+                {from: 'start', to: 'auth'},
+                {from: 'auth', to: 'check_role', label: 'Yes'},
+                {from: 'auth', to: 'login', label: 'No'},
+                {from: 'check_role', to: 'admin_panel', label: 'Admin'},
+                {from: 'check_role', to: 'user_panel', label: 'User'},
+                {from: 'check_role', to: 'guest_panel', label: 'Guest'},
+                {from: 'login', to: 'verify'},
+                {from: 'verify', to: 'check_2fa'},
+                {from: 'check_2fa', to: 'send_2fa', label: 'Yes'},
+                {from: 'check_2fa', to: 'access_granted', label: 'No'},
+                {from: 'send_2fa', to: 'verify_2fa'},
+                {from: 'verify_2fa', to: 'access_granted'},
+                {from: 'access_granted', to: 'check_role'},
+                {from: 'admin_panel', to: 'end'},
+                {from: 'user_panel', to: 'end'},
+                {from: 'guest_panel', to: 'end'},
+                {from: 'verify', to: 'access_denied'},
+                {from: 'access_denied', to: 'end'}
+            ]
+        },
+
+        parallel: {
+            nodes: [
+                {id: 'start', type: 'start', label: 'Start Batch'},
+                {id: 'split', type: 'process', label: 'Split Tasks'},
+                {id: 'task1', type: 'subprocess', label: 'Task 1\nAPI Call'},
+                {id: 'task2', type: 'subprocess', label: 'Task 2\nDatabase'},
+                {id: 'task3', type: 'subprocess', label: 'Task 3\nFile Process'},
+                {id: 'task4', type: 'subprocess', label: 'Task 4\nCalculation'},
+                {id: 'sync1', type: 'process', label: 'Sync Point'},
+                {id: 'aggregate', type: 'process', label: 'Aggregate\nResults'},
+                {id: 'validate', type: 'decision', label: 'All Success?'},
+                {id: 'report', type: 'data', label: 'Generate\nReport'},
+                {id: 'rollback', type: 'error', label: 'Rollback\nChanges'},
+                {id: 'notify_success', type: 'process', label: 'Success\nNotification'},
+                {id: 'notify_failure', type: 'error', label: 'Failure\nNotification'},
+                {id: 'end', type: 'end', label: 'End'}
+            ],
+            edges: [
+                {from: 'start', to: 'split'},
+                {from: 'split', to: 'task1'},
+                {from: 'split', to: 'task2'},
+                {from: 'split', to: 'task3'},
+                {from: 'split', to: 'task4'},
+                {from: 'task1', to: 'sync1'},
+                {from: 'task2', to: 'sync1'},
+                {from: 'task3', to: 'sync1'},
+                {from: 'task4', to: 'sync1'},
+                {from: 'sync1', to: 'aggregate'},
+                {from: 'aggregate', to: 'validate'},
+                {from: 'validate', to: 'report', label: 'Yes'},
+                {from: 'validate', to: 'rollback', label: 'No'},
+                {from: 'report', to: 'notify_success'},
+                {from: 'rollback', to: 'notify_failure'},
+                {from: 'notify_success', to: 'end'},
+                {from: 'notify_failure', to: 'end'}
+            ]
+        }
+    };
+
+    // ====================================
+    // Application Controller
+    // ====================================
+
+    const canvas = document.getElementById('flowchartCanvas');
+    const renderer = new FlowchartRenderer(canvas);
+    let layoutEngine = new GridFlowchartLayout({
+        cellWidth: 180,
+        cellHeight: 100,
+        direction: 'TB'
+    });
+
+    let currentExample = 'complex';
+
+    function loadExample(name) {
+        currentExample = name;
+        const data = examples[name];
+        const layout = layoutEngine.computeLayout(data.nodes, data.edges);
+        renderer.render(data, layout);
+    }
+
+    function toggleGrid() {
+        renderer.showGrid = !renderer.showGrid;
+        loadExample(currentExample);
+    }
+
+    function toggleDebug() {
+        renderer.showDebug = !renderer.showDebug;
+        loadExample(currentExample);
+    }
+
+    function changeDirection() {
+        const direction = document.getElementById('layoutDirection').value;
+        layoutEngine = new GridFlowchartLayout({
+            cellWidth: 180,
+            cellHeight: 100,
+            direction: direction
+        });
+        loadExample(currentExample);
+    }
+
+    // Initialize with complex example
+    loadExample('complex');
+
+    // Add pan and zoom functionality
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+    let scrollLeft = 0;
+    let scrollTop = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+        isPanning = true;
+        canvas.style.cursor = 'grabbing';
+        startX = e.pageX - canvas.offsetLeft;
+        startY = e.pageY - canvas.offsetTop;
+        scrollLeft = canvas.parentElement.scrollLeft;
+        scrollTop = canvas.parentElement.scrollTop;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isPanning) return;
+        e.preventDefault();
+        const x = e.pageX - canvas.offsetLeft;
+        const y = e.pageY - canvas.offsetTop;
+        const walkX = (x - startX) * 1;
+        const walkY = (y - startY) * 1;
+        canvas.parentElement.scrollLeft = scrollLeft - walkX;
+        canvas.parentElement.scrollTop = scrollTop - walkY;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isPanning = false;
+        canvas.style.cursor = 'grab';
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        isPanning = false;
+        canvas.style.cursor = 'grab';
+    });
+</script>
+</body>
+</html>

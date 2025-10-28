@@ -36,7 +36,7 @@ function applyLayout(layoutName) {
         cola: {
             name: 'cola',
             animate: true,
-            randomize: false,
+            randomize: true,  // Always start with random positions for consistent results
             fit: true,
             padding: 50,
             nodeSpacing: 50,
@@ -87,5 +87,37 @@ function loadDataset(type) {
     applyLayout('dagre');
 
     setTimeout(() => hideLoading(), 500);
+}
+
+/**
+ * Apply physics simulation to refine the current layout
+ * Uses Cola with randomize: false to start from current positions
+ */
+function applyPhysicsSimulation() {
+    const cy = getCyInstance();
+    if (!cy) {
+        console.error('Cytoscape not initialized yet');
+        return;
+    }
+
+    console.log('Applying physics simulation from current positions...');
+
+    // Cola configuration with randomize: false to use current positions
+    const physicsConfig = {
+        name: 'cola',
+        animate: true,
+        randomize: false,  // Start from current positions
+        fit: true,
+        padding: 50,
+        nodeSpacing: 50,
+        edgeLength: 150,
+        maxSimulationTime: 4000,  // Run for 4 seconds
+        convergenceThreshold: 0.01,
+        avoidOverlap: true,
+        handleDisconnected: true
+    };
+
+    const layout = cy.layout(physicsConfig);
+    layout.run();
 }
 

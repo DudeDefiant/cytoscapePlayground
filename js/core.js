@@ -13,20 +13,36 @@ function initCytoscape() {
         container: document.getElementById('cy'),
         
         style: [
-            // Core node styling
+            // Core node styling with native labels
             {
                 selector: 'node',
                 style: {
                     'background-color': '#fff',
                     'border-width': 2,
                     'border-color': '#667eea',
-                    'width': 200,  // Match HTML label width
-                    'height': 90,  // Match HTML label max-height
+                    'width': 220,
+                    'height': 120,
                     'shape': 'round-rectangle',
+                    'overlay-padding': 8,
+                    'z-index': 10,
+
+                    // Native label styling
+                    'label': function(ele) { return createNodeLabel(ele.data()); },
+                    'text-wrap': 'wrap',
+                    'text-max-width': '200px',
                     'text-valign': 'center',
                     'text-halign': 'center',
-                    'overlay-padding': 8,
-                    'z-index': 10
+                    'font-size': '10px',
+                    'font-family': 'Arial, sans-serif',
+                    'color': '#333',
+                    'text-background-color': '#ffffff',
+                    'text-background-opacity': 0.95,
+                    'text-background-padding': '6px',
+                    'text-background-shape': 'roundrectangle',
+                    'text-border-width': 1,
+                    'text-border-color': '#ddd',
+                    'text-border-opacity': 0.8,
+                    'line-height': 1.4
                 }
             },
             
@@ -46,8 +62,9 @@ function initCytoscape() {
                     'shape': 'diamond',
                     'border-color': '#FF9800',
                     'background-color': '#FFF3E0',
-                    'width': 120,  // Slightly smaller for diamond shape
-                    'height': 120
+                    'width': 180,
+                    'height': 180,
+                    'text-max-width': '160px'
                 }
             },
             
@@ -146,21 +163,7 @@ function initCytoscape() {
         minZoom: 0.2,
         maxZoom: 3
     });
-    
-    // Initialize HTML labels for rich content (exclude group container nodes)
-    cy.nodeHtmlLabel([
-        {
-            query: 'node[nodeType]',  // Only apply to nodes with nodeType (excludes group containers)
-            valign: "center",
-            halign: "center",
-            valignBox: "center",
-            halignBox: "center",
-            tpl: function(data) {
-                return createNodeHTML(data);
-            }
-        }
-    ]);
-    
+
     // Event handlers
     setupEventHandlers();
 }
@@ -190,55 +193,56 @@ function setupEventHandlers() {
 }
 
 /**
- * Create rich HTML content for nodes
+ * Get Unicode icon for node type
  */
-function createNodeHTML(data) {
+function getNodeIcon(nodeType) {
     const iconMap = {
-        process: 'fa-cogs',
-        decision: 'fa-code-branch',
-        data: 'fa-database',
-        terminal: 'fa-flag-checkered',
-        user: 'fa-user',
-        system: 'fa-server',
-        api: 'fa-plug',
-        document: 'fa-file-alt'
+        process: '⚙️',
+        decision: '◆',
+        data: '🗄️',
+        terminal: '⏹',
+        user: '👤',
+        system: '💻',
+        api: '🔌',
+        document: '📄'
     };
-    
-    const colorMap = {
-        process: '#4CAF50',
-        decision: '#FF9800',
-        data: '#2196F3',
-        terminal: '#9C27B0'
-    };
-    
-    const icon = iconMap[data.nodeType] || 'fa-circle';
-    const color = colorMap[data.nodeType] || '#667eea';
-    
-    let html = `
-        <div class="node-html-label node-${data.nodeType}">
-            <i class="node-icon fas ${icon}" style="color: ${color}"></i>
-            <div class="node-title">${data.title || data.id}</div>
-    `;
-    
+    return iconMap[nodeType] || '●';
+}
+
+/**
+ * Create native Cytoscape label for nodes
+ * Formats: Icon + Title + Description + Metrics
+ */
+function createNodeLabel(data) {
+    if (!data.nodeType) {
+        // Group/parent nodes - use their label property
+        return data.label || data.id;
+    }
+
+    const icon = getNodeIcon(data.nodeType);
+    const title = data.title || data.id;
+
+    let label = `${icon}\n${title}`;
+
+    // Add description if present (truncate if too long)
     if (data.description) {
-        html += `<div class="node-description">${data.description}</div>`;
-    }
-    
-    if (data.metrics) {
-        html += '<div class="node-metrics">';
-        for (const [key, value] of Object.entries(data.metrics)) {
-            html += `
-                <div class="metric">
-                    <div class="metric-value">${value}</div>
-                    <div class="metric-label">${key}</div>
-                </div>
-            `;
+        const maxDescLength = 80;
+        let desc = data.description;
+        if (desc.length > maxDescLength) {
+            desc = desc.substring(0, maxDescLength) + '...';
         }
-        html += '</div>';
+        label += `\n${desc}`;
     }
-    
-    html += '</div>';
-    return html;
+
+    // Add metrics if present
+    if (data.metrics) {
+        const metricsText = Object.entries(data.metrics)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(' | ');
+        label += `\n${metricsText}`;
+    }
+
+    return label;
 }
 
 /**

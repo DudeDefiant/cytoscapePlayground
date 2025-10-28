@@ -132,7 +132,7 @@ function exportPNG() {
         link.click();
 
         console.log('PNG exported successfully');
-        alert('PNG exported! Note: HTML labels are not included (canvas view only)');
+        alert('PNG exported successfully! All labels and content included.');
     } catch (error) {
         console.error('Error exporting PNG:', error);
         alert('Error exporting PNG: ' + error.message);
@@ -166,7 +166,7 @@ function exportSVG() {
         link.click();
 
         console.log('SVG exported successfully');
-        alert('SVG exported! Note: HTML labels are not included (canvas view only)');
+        alert('SVG exported successfully! All labels and content included. Vector format - scales perfectly!');
     } catch (error) {
         console.error('Error exporting SVG:', error);
         alert('Error exporting SVG: ' + error.message);

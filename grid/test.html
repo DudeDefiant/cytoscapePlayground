@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Flowchart - Non-Overlapping Groups</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: #2d3748;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 { font-size: 24px; }
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        .stat span {
+            font-weight: bold;
+            color: #68d391;
+            font-size: 18px;
+            margin-left: 5px;
+        }
+        .controls {
+            padding: 20px 30px;
+            background: #f7fafc;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        button.active {
+            background: #48bb78;
+        }
+        .canvas-container {
+            position: relative;
+            overflow: auto;
+            max-height: 800px;
+            background: #fafbfc;
+            margin: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        #flowchartCanvas {
+            display: block;
+            cursor: grab;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎯 Grid Flowchart - Non-Overlapping Groups</h1>
+        <div class="stats">
+            <div>Nodes:<span id="nodeCount">0</span></div>
+            <div>Groups:<span id="groupCount">0</span></div>
+            <div>Edges:<span id="edgeCount">0</span></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="loadExample('complex')" id="btn-complex">📊 Complex with Groups</button>
+        <button onclick="loadExample('simple')" id="btn-simple">📝 Simple Flow</button>
+        <button onclick="toggleGrid()" id="btn-grid">Grid: ON</button>
+        <button onclick="toggleRich()" id="btn-rich">Rich Nodes: ON</button>
+        <button onclick="toggleGroups()" id="btn-groups">Groups: ON</button>
+        <button onclick="changeLayout()" id="btn-layout">Layout: Columns</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="flowchartCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    // ====================================
+    // Improved Grid Layout with Non-Overlapping Groups
+    // ====================================
+    class GridLayoutWithGroups {
+        constructor(options = {}) {
+            this.cellWidth = options.cellWidth || 200;
+            this.cellHeight = options.cellHeight || 120;
+            this.padding = options.padding || 30;
+            this.groupLayout = options.groupLayout || 'columns'; // 'columns' or 'rows'
+        }
+
+        computeLayout(nodes, edges, groups = []) {
+            if (groups.length === 0) {
+                // No groups, use simple layout
+                return this.simpleLayout(nodes, edges);
+            }
+
+            // Separate nodes by group
+            const nodesByGroup = this.organizeNodesByGroup(nodes, groups);
+
+            // Build graph for each group
+            const groupGraphs = this.buildGroupGraphs(nodesByGroup, edges);
+
+            // Layout each group independently
+            const groupLayouts = this.layoutGroups(groupGraphs, nodesByGroup);
+
+            // Arrange groups in non-overlapping regions
+            const positions = this.arrangeGroups(groupLayouts, groups);
+
+            // Calculate group boundaries
+            const groupBounds = this.calculateGroupBounds(positions, groups, nodes);
+
+            // Route edges
+            const routes = this.routeEdges(positions, edges);
+
+            return { positions, routes, groupBounds };
+        }
+
+        simpleLayout(nodes, edges) {
+            const graph = this.buildGraph(nodes, edges);
+            const layers = this.assignLayers(graph, nodes);
+            const ordered = this.minimizeCrossings(layers, edges);
+            const positions = this.assignToGrid(ordered, 0, 0);
+            const routes = this.routeEdges(positions, edges);
+            return { positions, routes, groupBounds: {} };
+        }
+
+        organizeNodesByGroup(nodes, groups) {
+            const nodesByGroup = { _ungrouped: [] };
+            groups.forEach(g => nodesByGroup[g.id] = []);
+
+            nodes.forEach(node => {
+                if (node.group && nodesByGroup[node.group]) {
+                    nodesByGroup[node.group].push(node);
+                } else {
+                    nodesByGroup._ungrouped.push(node);
+                }
+            });
+
+            return nodesByGroup;
+        }
+
+        buildGroupGraphs(nodesByGroup, edges) {
+            const graphs = {};
+
+            Object.keys(nodesByGroup).forEach(groupId => {
+                const groupNodes = nodesByGroup[groupId];
+                const nodeIds = new Set(groupNodes.map(n => n.id));
+
+                // Build subgraph for this group
+                const graph = {};
+                groupNodes.forEach(node => {
+                    graph[node.id] = { incoming: [], outgoing: [] };
+                });
+
+                // Add edges within group
+                edges.forEach(edge => {
+                    if (nodeIds.has(edge.from) && nodeIds.has(edge.to)) {
+                        graph[edge.from].outgoing.push(edge.to);
+                        graph[edge.to].incoming.push(edge.from);
+                    }
+                });
+
+                graphs[groupId] = graph;
+            });
+
+            return graphs;
+        }
+
+        layoutGroups(groupGraphs, nodesByGroup) {
+            const layouts = {};
+
+            Object.keys(groupGraphs).forEach(groupId => {
+                const graph = groupGraphs[groupId];
+                const nodes = nodesByGroup[groupId];
+
+                if (nodes.length === 0) {
+                    layouts[groupId] = { layers: [], width: 0, height: 0 };
+                    return;
+                }
+
+                // Create layers for this group
+                const layers = this.assignLayers(graph, nodes);
+                const ordered = this.minimizeCrossings(layers,
+                    this.getGroupEdges(nodes, graph));
+
+                // Calculate dimensions
+                const width = Math.max(...layers.map(l => l.length));
+                const height = layers.length;
+
+                layouts[groupId] = { layers: ordered, width, height };
+            });
+
+            return layouts;
+        }
+
+        arrangeGroups(groupLayouts, groups) {
+            const positions = {};
+
+            if (this.groupLayout === 'columns') {
+                // Arrange groups side by side
+                let currentX = 0;
+
+                // Process defined groups first
+                groups.forEach(group => {
+                    const layout = groupLayouts[group.id];
+                    if (!layout || layout.width === 0) return;
+
+                    // Place this group starting at currentX
+                    this.placeGroup(layout, currentX, 0, positions);
+                    currentX += layout.width + 1; // Add spacing between groups
+                });
+
+                // Place ungrouped nodes at the end
+                const ungrouped = groupLayouts._ungrouped;
+                if (ungrouped && ungrouped.width > 0) {
+                    this.placeGroup(ungrouped, currentX, 0, positions);
+                }
+            } else {
+                // Arrange groups vertically
+                let currentY = 0;
+
+                groups.forEach(group => {
+                    const layout = groupLayouts[group.id];
+                    if (!layout || layout.height === 0) return;
+
+                    this.placeGroup(layout, 0, currentY, positions);
+                    currentY += layout.height + 1;
+                });
+
+                const ungrouped = groupLayouts._ungrouped;
+                if (ungrouped && ungrouped.height > 0) {
+                    this.placeGroup(ungrouped, 0, currentY, positions);
+                }
+            }
+
+            return positions;
+        }
+
+        placeGroup(layout, offsetX, offsetY, positions) {
+            layout.layers.forEach((layer, row) => {
+                layer.forEach((nodeId, col) => {
+                    positions[nodeId] = {
+                        x: (offsetX + col) * this.cellWidth + this.cellWidth / 2,
+                        y: (offsetY + row) * this.cellHeight + this.cellHeight / 2,
+                        gridX: offsetX + col,
+                        gridY: offsetY + row
+                    };
+                });
+            });
+        }
+
+        getGroupEdges(nodes, graph) {
+            const edges = [];
+            const nodeIds = new Set(nodes.map(n => n.id));
+
+            nodes.forEach(node => {
+                graph[node.id].outgoing.forEach(target => {
+                    if (nodeIds.has(target)) {
+                        edges.push({ from: node.id, to: target });
+                    }
+                });
+            });
+
+            return edges;
+        }
+
+        buildGraph(nodes, edges) {
+            const graph = {};
+            nodes.forEach(node => {
+                graph[node.id] = { incoming: [], outgoing: [] };
+            });
+            edges.forEach(edge => {
+                if (graph[edge.from] && graph[edge.to]) {
+                    graph[edge.from].outgoing.push(edge.to);
+                    graph[edge.to].incoming.push(edge.from);
+                }
+            });
+            return graph;
+        }
+
+        assignLayers(graph, nodes) {
+            const layers = [];
+            const nodeLayer = {};
+            const nodeIds = nodes.map(n => n.id);
+
+            // Find roots within this subgraph
+            const roots = nodeIds.filter(id =>
+                !graph[id] || graph[id].incoming.length === 0
+            );
+
+            if (roots.length === 0 && nodeIds.length > 0) {
+                roots.push(nodeIds[0]);
+            }
+
+            // BFS to assign layers
+            const visited = new Set();
+            const queue = roots.map(r => ({node: r, layer: 0}));
+
+            while (queue.length > 0) {
+                const {node, layer} = queue.shift();
+                if (visited.has(node)) continue;
+                visited.add(node);
+
+                nodeLayer[node] = Math.max(nodeLayer[node] || 0, layer);
+
+                if (graph[node]) {
+                    graph[node].outgoing.forEach(child => {
+                        if (!visited.has(child)) {
+                            queue.push({node: child, layer: layer + 1});
+                        }
+                    });
+                }
+            }
+
+            // Group by layer
+            Object.entries(nodeLayer).forEach(([node, layer]) => {
+                layers[layer] = layers[layer] || [];
+                layers[layer].push(node);
+            });
+
+            return layers;
+        }
+
+        minimizeCrossings(layers, edges) {
+            if (!edges || edges.length === 0) return layers;
+
+            // Simple barycentric ordering
+            for (let i = 1; i < layers.length; i++) {
+                layers[i].sort((a, b) => {
+                    const aPos = this.getBarycenter(a, layers[i-1], edges);
+                    const bPos = this.getBarycenter(b, layers[i-1], edges);
+                    return aPos - bPos;
+                });
+            }
+            return layers;
+        }
+
+        getBarycenter(node, prevLayer, edges) {
+            const connected = edges
+                .filter(e => e.to === node && prevLayer.includes(e.from))
+                .map(e => prevLayer.indexOf(e.from));
+            return connected.length ? connected.reduce((a,b) => a+b) / connected.length : prevLayer.length / 2;
+        }
+
+        assignToGrid(layers, offsetX = 0, offsetY = 0) {
+            const positions = {};
+            const maxWidth = Math.max(...layers.map(l => l.length));
+
+            layers.forEach((layer, row) => {
+                const startCol = Math.floor((maxWidth - layer.length) / 2);
+                layer.forEach((node, col) => {
+                    positions[node] = {
+                        x: (offsetX + startCol + col) * this.cellWidth + this.cellWidth / 2,
+                        y: (offsetY + row) * this.cellHeight + this.cellHeight / 2,
+                        gridX: offsetX + startCol + col,
+                        gridY: offsetY + row
+                    };
+                });
+            });
+
+            return positions;
+        }
+
+        calculateGroupBounds(positions, groups, nodes) {
+            const bounds = {};
+
+            groups.forEach(group => {
+                const groupNodes = nodes.filter(n => n.group === group.id);
+                if (groupNodes.length === 0) return;
+
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                groupNodes.forEach(node => {
+                    const pos = positions[node.id];
+                    if (pos) {
+                        minX = Math.min(minX, pos.x - this.cellWidth/2);
+                        minY = Math.min(minY, pos.y - this.cellHeight/2);
+                        maxX = Math.max(maxX, pos.x + this.cellWidth/2);
+                        maxY = Math.max(maxY, pos.y + this.cellHeight/2);
+                    }
+                });
+
+                bounds[group.id] = {
+                    ...group,
+                    x: minX - this.padding,
+                    y: minY - this.padding,
+                    width: maxX - minX + this.padding * 2,
+                    height: maxY - minY + this.padding * 2
+                };
+            });
+
+            return bounds;
+        }
+
+        routeEdges(positions, edges) {
+            return edges.map(edge => {
+                const from = positions[edge.from];
+                const to = positions[edge.to];
+                if (!from || !to) return null;
+
+                const points = [];
+                points.push({x: from.x, y: from.y + 40});
+
+                // Smart routing for edges between groups
+                if (Math.abs(from.gridX - to.gridX) > 1 || Math.abs(from.gridY - to.gridY) > 1) {
+                    // Long distance - use orthogonal routing
+                    const midY = from.y + (to.y - from.y) / 2;
+                    points.push({x: from.x, y: midY});
+                    points.push({x: to.x, y: midY});
+                }
+
+                points.push({x: to.x, y: to.y - 40});
+                return {...edge, points};
+            }).filter(r => r !== null);
+        }
+    }
+
+    // ====================================
+    // Renderer (same as before but simplified)
+    // ====================================
+    class FlowchartRenderer {
+        constructor(canvas) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.showGrid = true;
+            this.showRich = true;
+            this.showGroups = true;
+
+            this.colors = {
+                start: '#48bb78',
+                end: '#48bb78',
+                process: '#4299e1',
+                decision: '#ed8936',
+                subprocess: '#9f7aea',
+                data: '#38b2ac',
+                error: '#f56565'
+            };
+        }
+
+        render(data, layout) {
+            // Calculate canvas size with padding
+            let maxX = 100, maxY = 100;
+            Object.values(layout.positions).forEach(p => {
+                maxX = Math.max(maxX, p.x + 100);
+                maxY = Math.max(maxY, p.y + 100);
+            });
+
+            this.canvas.width = Math.max(maxX, 1200);
+            this.canvas.height = Math.max(maxY, 700);
+
+            // Clear
+            this.ctx.fillStyle = '#fafbfc';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Draw layers
+            if (this.showGrid) this.drawGrid();
+            if (this.showGroups && layout.groupBounds) {
+                Object.values(layout.groupBounds).forEach(g => this.drawGroup(g));
+            }
+
+            // Draw edges
+            layout.routes.forEach(route => this.drawEdge(route));
+
+            // Draw nodes
+            Object.entries(layout.positions).forEach(([id, pos]) => {
+                const node = data.nodes.find(n => n.id === id);
+                if (node) {
+                    if (this.showRich) {
+                        this.drawRichNode(node, pos);
+                    } else {
+                        this.drawSimpleNode(node, pos);
+                    }
+                }
+            });
+
+            // Update stats
+            document.getElementById('nodeCount').textContent = data.nodes.length;
+            document.getElementById('groupCount').textContent = data.groups?.length || 0;
+            document.getElementById('edgeCount').textContent = data.edges.length;
+        }
+
+        drawGrid() {
+            const ctx = this.ctx;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 0.5;
+            ctx.setLineDash([5, 5]);
+
+            for (let x = 0; x < this.canvas.width; x += 200) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, this.canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < this.canvas.height; y += 120) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(this.canvas.width, y);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+        }
+
+        drawGroup(group) {
+            const ctx = this.ctx;
+
+            // Background
+            ctx.fillStyle = group.bgColor || 'rgba(102, 126, 234, 0.05)';
+            this.roundRect(group.x, group.y, group.width, group.height, 12, true);
+
+            // Border
+            ctx.strokeStyle = group.borderColor || '#667eea';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 4]);
+            this.roundRect(group.x, group.y, group.width, group.height, 12, false, true);
+            ctx.setLineDash([]);
+
+            // Label
+            ctx.fillStyle = group.borderColor || '#667eea';
+            ctx.font = 'bold 14px -apple-system, sans-serif';
+            ctx.fillText(group.title, group.x + 15, group.y + 20);
+
+            if (group.description) {
+                ctx.fillStyle = '#718096';
+                ctx.font = '12px -apple-system, sans-serif';
+                ctx.fillText(group.description, group.x + 15, group.y + 38);
+            }
+        }
+
+        drawRichNode(node, pos) {
+            const ctx = this.ctx;
+            const width = 160;
+            const height = 80;
+            const x = pos.x - width/2;
+            const y = pos.y - height/2;
+
+            const color = this.colors[node.type] || '#718096';
+
+            // Shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 3;
+
+            // Background
+            ctx.fillStyle = 'white';
+            this.roundRect(x, y, width, height, 8, true);
+            ctx.shadowColor = 'transparent';
+
+            // Header
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(x + 8, y);
+            ctx.lineTo(x + width - 8, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + 8);
+            ctx.lineTo(x + width, y + 30);
+            ctx.lineTo(x, y + 30);
+            ctx.lineTo(x, y + 8);
+            ctx.quadraticCurveTo(x, y, x + 8, y);
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            this.roundRect(x, y, width, height, 8, false, true);
+
+            // Icon & Title
+            ctx.fillStyle = 'white';
+            ctx.font = '16px -apple-system, sans-serif';
+            ctx.textAlign = 'left';
+            const icon = node.icon || {
+                start: '⚡', end: '🎯', process: '⚙️', decision: '❓',
+                subprocess: '📦', data: '💾', error: '⚠️'
+            }[node.type] || '📄';
+            ctx.fillText(icon, x + 10, y + 20);
+
+            ctx.font = 'bold 12px -apple-system, sans-serif';
+            ctx.fillText(node.title || node.label, x + 35, y + 20);
+
+            // Description
+            if (node.description) {
+                ctx.fillStyle = '#4a5568';
+                ctx.font = '11px -apple-system, sans-serif';
+                ctx.fillText(node.description, x + 10, y + 50);
+            }
+
+            // Metrics
+            if (node.metrics) {
+                ctx.fillStyle = color;
+                ctx.font = '10px -apple-system, sans-serif';
+                const metric = Object.entries(node.metrics)[0];
+                if (metric) {
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`${metric[0]}: ${metric[1]}`, x + width - 10, y + height - 10);
+                }
+            }
+        }
+
+        drawSimpleNode(node, pos) {
+            const ctx = this.ctx;
+            const width = 140;
+            const height = 60;
+            const x = pos.x - width/2;
+            const y = pos.y - height/2;
+
+            ctx.fillStyle = this.colors[node.type] || '#718096';
+
+            if (node.type === 'decision') {
+                ctx.beginPath();
+                ctx.moveTo(pos.x, y);
+                ctx.lineTo(x + width, pos.y);
+                ctx.lineTo(pos.x, y + height);
+                ctx.lineTo(x, pos.y);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                this.roundRect(x, y, width, height, 8, true);
+            }
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 13px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.label, pos.x, pos.y);
+        }
+
+        drawEdge(route) {
+            const ctx = this.ctx;
+            const points = route.points;
+            if (!points || points.length < 2) return;
+
+            // Line
+            ctx.strokeStyle = '#718096';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            points.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+
+            // Arrow
+            const last = points[points.length - 1];
+            const prev = points[points.length - 2];
+            const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+
+            ctx.fillStyle = '#718096';
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(
+                last.x - 10 * Math.cos(angle - Math.PI/6),
+                last.y - 10 * Math.sin(angle - Math.PI/6)
+            );
+            ctx.lineTo(
+                last.x - 10 * Math.cos(angle + Math.PI/6),
+                last.y - 10 * Math.sin(angle + Math.PI/6)
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            // Label
+            if (route.label || route.description) {
+                const midX = (points[0].x + last.x) / 2;
+                const midY = (points[0].y + last.y) / 2;
+                const text = route.label || route.description;
+
+                ctx.font = '11px -apple-system, sans-serif';
+                const width = ctx.measureText(text).width;
+
+                ctx.fillStyle = 'rgba(255,255,255,0.95)';
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 1;
+                this.roundRect(midX - width/2 - 5, midY - 10, width + 10, 20, 4, true, true);
+
+                ctx.fillStyle = '#4a5568';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, midX, midY);
+            }
+        }
+
+        roundRect(x, y, w, h, r, fill = false, stroke = false) {
+            const ctx = this.ctx;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            if (fill) ctx.fill();
+            if (stroke) ctx.stroke();
+        }
+    }
+
+    // ====================================
+    // Example Data
+    // ====================================
+    const examples = {
+        complex: {
+            nodes: [
+                // Frontend group
+                {id: 'start', type: 'start', label: 'Start', title: 'User Request',
+                    description: 'HTTP Request', group: 'frontend'},
+                {id: 'auth', type: 'process', label: 'Auth', title: 'Authenticate',
+                    description: 'Check JWT', group: 'frontend', metrics: {time: '50ms'}},
+                {id: 'validate', type: 'decision', label: 'Valid?', title: 'Validate',
+                    description: 'Permissions', group: 'frontend'},
+
+                // Backend group
+                {id: 'cache', type: 'subprocess', label: 'Cache', title: 'Cache Check',
+                    description: 'Redis lookup', group: 'backend', metrics: {hit: '94%'}},
+                {id: 'db', type: 'data', label: 'Database', title: 'Query DB',
+                    description: 'PostgreSQL', group: 'backend'},
+                {id: 'process', type: 'subprocess', label: 'Process', title: 'Process',
+                    description: 'Business logic', group: 'backend'},
+
+                // ML group
+                {id: 'prepare', type: 'process', label: 'Prepare', title: 'Prepare Data',
+                    description: 'Format data', group: 'ml'},
+                {id: 'predict', type: 'subprocess', label: 'ML Model', title: 'Predict',
+                    description: 'Run inference', icon: '🤖', group: 'ml', metrics: {acc: '96%'}},
+                {id: 'postprocess', type: 'process', label: 'Post-Process', title: 'Format',
+                    description: 'Format results', group: 'ml'},
+
+                // Response group
+                {id: 'aggregate', type: 'process', label: 'Aggregate', title: 'Merge',
+                    description: 'Combine results', group: 'response'},
+                {id: 'format', type: 'process', label: 'Format', title: 'Format JSON',
+                    description: 'API response', group: 'response'},
+                {id: 'end', type: 'end', label: 'End', title: 'Response',
+                    description: 'Return data', group: 'response'}
+            ],
+            edges: [
+                {from: 'start', to: 'auth', description: 'Check auth'},
+                {from: 'auth', to: 'validate', description: 'Validate'},
+                {from: 'validate', to: 'cache', label: 'Valid'},
+                {from: 'cache', to: 'db', description: 'Miss'},
+                {from: 'cache', to: 'aggregate', description: 'Hit'},
+                {from: 'db', to: 'process'},
+                {from: 'process', to: 'prepare', description: 'To ML'},
+                {from: 'prepare', to: 'predict'},
+                {from: 'predict', to: 'postprocess'},
+                {from: 'postprocess', to: 'aggregate', description: 'ML results'},
+                {from: 'process', to: 'aggregate', description: 'Direct'},
+                {from: 'aggregate', to: 'format'},
+                {from: 'format', to: 'end'}
+            ],
+            groups: [
+                {id: 'frontend', title: '🌐 Frontend', description: 'Entry Layer',
+                    bgColor: 'rgba(66, 153, 225, 0.08)', borderColor: '#4299e1'},
+                {id: 'backend', title: '⚙️ Backend', description: 'Core Logic',
+                    bgColor: 'rgba(159, 122, 234, 0.08)', borderColor: '#9f7aea'},
+                {id: 'ml', title: '🤖 ML Pipeline', description: 'AI Processing',
+                    bgColor: 'rgba(237, 137, 54, 0.08)', borderColor: '#ed8936'},
+                {id: 'response', title: '📤 Response', description: 'Output Layer',
+                    bgColor: 'rgba(72, 187, 120, 0.08)', borderColor: '#48bb78'}
+            ]
+        },
+
+        simple: {
+            nodes: [
+                {id: 'start', type: 'start', label: 'Start'},
+                {id: 'input', type: 'process', label: 'Get Input'},
+                {id: 'validate', type: 'process', label: 'Validate'},
+                {id: 'check', type: 'decision', label: 'Valid?'},
+                {id: 'process', type: 'subprocess', label: 'Process'},
+                {id: 'store', type: 'data', label: 'Store'},
+                {id: 'error', type: 'error', label: 'Error'},
+                {id: 'end', type: 'end', label: 'End'}
+            ],
+            edges: [
+                {from: 'start', to: 'input'},
+                {from: 'input', to: 'validate'},
+                {from: 'validate', to: 'check'},
+                {from: 'check', to: 'process', label: 'Yes'},
+                {from: 'check', to: 'error', label: 'No'},
+                {from: 'process', to: 'store'},
+                {from: 'store', to: 'end'},
+                {from: 'error', to: 'end'}
+            ],
+            groups: []
+        }
+    };
+
+    // ====================================
+    // Application
+    // ====================================
+    const canvas = document.getElementById('flowchartCanvas');
+    const renderer = new FlowchartRenderer(canvas);
+    let layoutEngine = new GridLayoutWithGroups({ groupLayout: 'columns' });
+    let currentExample = 'complex';
+    let layoutMode = 'columns';
+
+    function loadExample(name) {
+        document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
+            if (btn.id.startsWith('btn-') && !btn.id.includes('grid') &&
+                !btn.id.includes('rich') && !btn.id.includes('groups') &&
+                !btn.id.includes('layout')) {
+                btn.classList.remove('active');
+            }
+        });
+        document.getElementById(`btn-${name}`).classList.add('active');
+
+        currentExample = name;
+        const data = examples[name];
+        const layout = layoutEngine.computeLayout(data.nodes, data.edges, data.groups);
+        renderer.render(data, layout);
+    }
+
+    function toggleGrid() {
+        renderer.showGrid = !renderer.showGrid;
+        document.getElementById('btn-grid').textContent = `Grid: ${renderer.showGrid ? 'ON' : 'OFF'}`;
+        loadExample(currentExample);
+    }
+
+    function toggleRich() {
+        renderer.showRich = !renderer.showRich;
+        document.getElementById('btn-rich').textContent = `Rich Nodes: ${renderer.showRich ? 'ON' : 'OFF'}`;
+        loadExample(currentExample);
+    }
+
+    function toggleGroups() {
+        renderer.showGroups = !renderer.showGroups;
+        document.getElementById('btn-groups').textContent = `Groups: ${renderer.showGroups ? 'ON' : 'OFF'}`;
+        loadExample(currentExample);
+    }
+
+    function changeLayout() {
+        layoutMode = layoutMode === 'columns' ? 'rows' : 'columns';
+        layoutEngine = new GridLayoutWithGroups({ groupLayout: layoutMode });
+        document.getElementById('btn-layout').textContent = `Layout: ${layoutMode.charAt(0).toUpperCase() + layoutMode.slice(1)}`;
+        loadExample(currentExample);
+    }
+
+    // Initialize
+    loadExample('complex');
+</script>
+</body>
+</html>
