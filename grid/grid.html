@@ -56,6 +56,17 @@
             font-size: 14px;
         }
 
+        label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
         .canvas-container {
             position: relative;
             width: 100%;
@@ -129,9 +140,51 @@
     <h1>🎯 Grid-Based Flowchart with Modified Sugiyama Layout</h1>
 
     <div class="controls">
-        <button onclick="loadExample('complex')">Complex Process</button>
-        <button onclick="loadExample('decision')">Decision Tree</button>
-        <button onclick="loadExample('parallel')">Parallel Process</button>
+        <label for="exampleSelect">Example:</label>
+        <select id="exampleSelect" onchange="loadSelectedExample()">
+            <optgroup label="Basic Examples">
+                <option value="Cycle">Cycle</option>
+                <option value="Flowchart">Flowchart</option>
+                <option value="Under">Under</option>
+                <option value="What">What</option>
+                <option value="Is">Is</option>
+                <option value="Simple">Simple</option>
+                <option value="Hanger">Hanger</option>
+            </optgroup>
+            <optgroup label="Process & Workflow">
+                <option value="Freelance">Freelance</option>
+                <option value="Manager">Manager</option>
+                <option value="Defining">Defining</option>
+                <option value="Evaluate">Evaluate</option>
+                <option value="captures">captures</option>
+                <option value="Logo">Logo</option>
+                <option value="Thank">Thank</option>
+                <option value="Setup">Setup</option>
+                <option value="Feedback">Feedback</option>
+                <option value="Training">Training</option>
+                <option value="Change-tyre">Change-tyre</option>
+            </optgroup>
+            <optgroup label="Decision Trees">
+                <option value="Jupiter">Jupiter</option>
+                <option value="Earth">Earth</option>
+                <option value="decision-flip">decision-flip</option>
+            </optgroup>
+            <optgroup label="Complex Flows">
+                <option value="complex-1">complex-1</option>
+                <option value="complex-2">complex-2</option>
+                <option value="complex-3">complex-3</option>
+                <option value="complex-4">complex-4</option>
+                <option value="complex-5">complex-5</option>
+                <option value="complex-6">complex-6</option>
+                <option value="simple-complex-1">simple-complex-1</option>
+            </optgroup>
+            <optgroup label="Reverse Edge & Merging">
+                <option value="reverse-edge-merging-1">reverse-edge-merging-1</option>
+                <option value="reverse-edge-merging-2">reverse-edge-merging-2</option>
+                <option value="reverse-edge-merging-3">reverse-edge-merging-3</option>
+            </optgroup>
+        </select>
+
         <button onclick="toggleGrid()">Toggle Grid</button>
         <button onclick="toggleDebug()">Toggle Debug Info</button>
 
@@ -147,9 +200,24 @@
         </div>
     </div>
 
+    <div class="controls">
+        <label for="jsonInput">JSON Input:</label>
+        <textarea id="jsonInput" rows="8" style="flex: 1; font-family: monospace; padding: 10px; border: 2px solid #e2e8f0; border-radius: 6px; resize: vertical;" placeholder='Paste your JSON graph here, e.g.:
+{
+  "nodes": [{"id": "n1", "label": "Node 1", "type": "start"}, ...],
+  "edges": [{"from": "n1", "to": "n2"}, ...]
+}'></textarea>
+        <button onclick="renderCustomJSON()">Render JSON</button>
+    </div>
+
     <div class="canvas-container">
         <canvas id="flowchartCanvas"></canvas>
         <div class="info" id="info"></div>
+    </div>
+
+    <div id="debugPanel" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 2px solid #e2e8f0; max-height: 600px; overflow-y: auto;">
+        <h3 style="margin-top: 0; color: #2d3748;">🔍 Debug Information</h3>
+        <div id="debugContent" style="font-family: monospace; font-size: 12px; color: #4a5568; line-height: 1.6;"></div>
     </div>
 
     <div class="legend">
@@ -177,13 +245,20 @@
             <div class="legend-color" style="background: #38b2ac;"></div>
             <span>Data Operation</span>
         </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: rgba(102, 126, 234, 0.15); border: 2px dashed rgba(102, 126, 234, 0.5);"></div>
+            <span>Group Container</span>
+        </div>
     </div>
 </div>
 
 <script>
     // ====================================
-    // Modified Sugiyama Grid Layout Engine
+    // Modified Sugiyama Grid Layout Engine with A* Pathfinding
+    // Version: 2.0 - A* Implementation
     // ====================================
+
+    console.log('🚀 Grid Layout Engine v2.0 with A* Pathfinding loaded');
 
     class GridFlowchartLayout {
         constructor(options = {}) {
@@ -193,13 +268,20 @@
             this.direction = options.direction || 'TB';
             this.gridVisible = options.gridVisible !== false;
             this.debugMode = options.debugMode || false;
+            this.groupPadding = options.groupPadding || 40;
         }
 
         computeLayout(nodes, edges) {
             console.log('Computing layout for', nodes.length, 'nodes');
 
-            // Build adjacency lists
-            const graph = this.buildGraph(nodes, edges);
+            // Store nodes for later use in routing
+            this.nodes = nodes;
+
+            // Separate groups from regular nodes
+            const { groups, regularNodes } = this.separateGroups(nodes);
+
+            // Build adjacency lists (only for regular nodes)
+            const graph = this.buildGraph(regularNodes, edges);
 
             // Detect cycles and create DAG
             const dag = this.removeCycles(graph, edges);
@@ -216,15 +298,96 @@
             // Assign to grid positions
             const positions = this.assignToGrid(ordered);
 
+            // Calculate group bounds and positions
+            const groupBounds = this.calculateGroupBounds(groups, regularNodes, positions);
+
             // Route edges
-            const routes = this.routeEdges(positions, extended.edges);
+            const routingResult = this.routeEdges(positions, extended.edges);
+            const routes = routingResult.routes;
+            const debugInfo = routingResult.debugInfo;
 
             return {
                 positions,
                 routes,
                 layers: ordered,
-                crossings: this.countCrossings(ordered, extended.edges)
+                groups: groupBounds,
+                crossings: this.countCrossings(ordered, extended.edges),
+                debugInfo
             };
+        }
+
+        separateGroups(nodes) {
+            const groups = [];
+            const regularNodes = [];
+
+            nodes.forEach(node => {
+                // A node is a group if it has no parent property
+                // In Cytoscape format, groups are parent nodes
+                const hasChildren = nodes.some(n => n.parent === node.id);
+
+                if (hasChildren && !node.parent) {
+                    groups.push(node);
+                } else if (!hasChildren || node.parent) {
+                    regularNodes.push(node);
+                }
+            });
+
+            console.log('Groups:', groups.length, groups.map(g => g.id));
+            console.log('Regular nodes:', regularNodes.length, regularNodes.map(n => n.id));
+
+            return { groups, regularNodes };
+        }
+
+        calculateGroupBounds(groups, nodes, positions) {
+            const bounds = {};
+
+            groups.forEach(group => {
+                // Find all children of this group
+                const children = nodes.filter(n => n.parent === group.id);
+
+                if (children.length === 0) {
+                    return;
+                }
+
+                // Find min/max positions of children
+                let minX = Infinity, maxX = -Infinity;
+                let minY = Infinity, maxY = -Infinity;
+                let minGridX = Infinity, maxGridX = -Infinity;
+                let minGridY = Infinity, maxGridY = -Infinity;
+
+                children.forEach(child => {
+                    const pos = positions[child.id];
+                    if (pos) {
+                        minX = Math.min(minX, pos.x);
+                        maxX = Math.max(maxX, pos.x);
+                        minY = Math.min(minY, pos.y);
+                        maxY = Math.max(maxY, pos.y);
+                        minGridX = Math.min(minGridX, pos.gridX);
+                        maxGridX = Math.max(maxGridX, pos.gridX);
+                        minGridY = Math.min(minGridY, pos.gridY);
+                        maxGridY = Math.max(maxGridY, pos.gridY);
+                    }
+                });
+
+                // Add padding around children
+                const nodeWidth = 140;
+                const nodeHeight = 60;
+
+                bounds[group.id] = {
+                    x: minX - nodeWidth / 2 - this.groupPadding,
+                    y: minY - nodeHeight / 2 - this.groupPadding,
+                    width: (maxX - minX) + nodeWidth + this.groupPadding * 2,
+                    height: (maxY - minY) + nodeHeight + this.groupPadding * 2,
+                    gridX: minGridX,
+                    gridY: minGridY,
+                    gridWidth: maxGridX - minGridX + 1,
+                    gridHeight: maxGridY - minGridY + 1,
+                    label: group.label || group.id,
+                    children: children.map(c => c.id)
+                };
+            });
+
+            return bounds;
         }
 
         buildGraph(nodes, edges) {
@@ -281,20 +444,29 @@
             });
 
             // Create new edge list with reversed edges
+            // CRITICAL: We reverse for layer assignment, but preserve original direction for port assignment
             edges.forEach(edge => {
                 const isReversed = reversedEdges.some(
                     r => r.from === edge.from && r.to === edge.to
                 );
 
                 if (isReversed) {
+                    // Reverse for layout, but store original direction
                     newEdges.push({
                         ...edge,
-                        from: edge.to,
-                        to: edge.from,
+                        from: edge.to,          // Reversed for layer assignment
+                        to: edge.from,          // Reversed for layer assignment
+                        originalFrom: edge.from, // Original source (for port assignment)
+                        originalTo: edge.to,     // Original target (for port assignment)
                         reversed: true
                     });
                 } else {
-                    newEdges.push(edge);
+                    newEdges.push({
+                        ...edge,
+                        originalFrom: edge.from,
+                        originalTo: edge.to,
+                        reversed: false
+                    });
                 }
             });
 
@@ -326,6 +498,13 @@
                 roots.push(Object.keys(graph)[0]);
             }
 
+            console.log('\n=== LAYER ASSIGNMENT ===');
+            console.log('Roots:', roots);
+            console.log('Graph structure:');
+            Object.keys(graph).forEach(node => {
+                console.log(`  ${node}: incoming=[${graph[node].incoming}], outgoing=[${graph[node].outgoing}]`);
+            });
+
             // Use longest path to assign layers
             const visited = new Set();
             const queue = roots.map(r => ({node: r, layer: 0}));
@@ -341,6 +520,8 @@
                     queue.push({node: child, layer: layer + 1});
                 });
             }
+
+            console.log('Node layers:', nodeLayer);
 
             // Group nodes by layer
             Object.keys(nodeLayer).forEach(node => {
@@ -370,6 +551,11 @@
                 const fromLayer = nodeToLayer[edge.from];
                 const toLayer = nodeToLayer[edge.to];
 
+                if (fromLayer === undefined || toLayer === undefined) {
+                    console.warn(`Skipping edge ${edge.from}->${edge.to}: missing layer assignment`);
+                    return;
+                }
+
                 if (toLayer - fromLayer <= 1) {
                     // Direct connection
                     extendedEdges.push(edge);
@@ -384,17 +570,26 @@
                         extendedEdges.push({
                             from: currentNode,
                             to: dummyNode,
-                            isDummy: true,
-                            originalEdge: edge
+                            originalEdge: edge,
+                            // CRITICAL: Preserve original direction for port assignment
+                            originalFrom: edge.originalFrom,
+                            originalTo: edge.originalTo,
+                            reversed: edge.reversed
                         });
 
                         currentNode = dummyNode;
                     }
 
+                    // Final segment from last dummy to target
                     extendedEdges.push({
                         from: currentNode,
                         to: edge.to,
-                        ...edge
+                        label: edge.label,
+                        reversed: edge.reversed,
+                        originalEdge: edge,
+                        // CRITICAL: Preserve original direction for port assignment
+                        originalFrom: edge.originalFrom,
+                        originalTo: edge.originalTo
                     });
                 }
             });
@@ -403,13 +598,16 @@
         }
 
         minimizeCrossings(layers, edges) {
-            // Barycentric method with multiple passes
-            const maxIterations = 10;
+            // Enhanced crossing minimization with median heuristic and multiple strategies
+            const maxIterations = 24;
             let bestLayers = layers.map(l => [...l]);
             let bestCrossings = this.countCrossings(bestLayers, edges);
 
             for (let iter = 0; iter < maxIterations; iter++) {
                 const newLayers = bestLayers.map(l => [...l]);
+
+                // Alternate between barycenter and median methods
+                const useMedian = iter % 2 === 1;
 
                 // Forward pass
                 for (let i = 1; i < newLayers.length; i++) {
@@ -417,7 +615,8 @@
                         newLayers[i],
                         newLayers[i-1],
                         edges,
-                        'forward'
+                        'forward',
+                        useMedian
                     );
                 }
 
@@ -427,7 +626,8 @@
                         newLayers[i],
                         newLayers[i+1],
                         edges,
-                        'backward'
+                        'backward',
+                        useMedian
                     );
                 }
 
@@ -440,10 +640,13 @@
                 if (crossings === 0) break;
             }
 
+            // Final optimization: try transposing adjacent nodes
+            bestLayers = this.transposeOptimization(bestLayers, edges);
+
             return bestLayers;
         }
 
-        orderLayer(layer, referenceLayer, edges, direction) {
+        orderLayer(layer, referenceLayer, edges, direction, useMedian = false) {
             const positions = {};
 
             layer.forEach(node => {
@@ -460,13 +663,57 @@
                 });
 
                 if (connected.length > 0) {
-                    positions[node] = connected.reduce((a, b) => a + b, 0) / connected.length;
+                    if (useMedian) {
+                        // Median heuristic - more stable for nodes with many connections
+                        connected.sort((a, b) => a - b);
+                        const mid = Math.floor(connected.length / 2);
+                        if (connected.length % 2 === 0) {
+                            positions[node] = (connected[mid - 1] + connected[mid]) / 2;
+                        } else {
+                            positions[node] = connected[mid];
+                        }
+                    } else {
+                        // Barycenter method - average position
+                        positions[node] = connected.reduce((a, b) => a + b, 0) / connected.length;
+                    }
                 } else {
                     positions[node] = referenceLayer.length / 2;
                 }
             });
 
             return layer.sort((a, b) => positions[a] - positions[b]);
+        }
+
+        transposeOptimization(layers, edges) {
+            // Try swapping adjacent nodes to reduce crossings
+            let improved = true;
+            let result = layers.map(l => [...l]);
+            let currentCrossings = this.countCrossings(result, edges);
+
+            while (improved) {
+                improved = false;
+
+                for (let layerIdx = 0; layerIdx < result.length; layerIdx++) {
+                    const layer = result[layerIdx];
+
+                    for (let i = 0; i < layer.length - 1; i++) {
+                        // Try swapping adjacent nodes
+                        const testLayers = result.map(l => [...l]);
+                        [testLayers[layerIdx][i], testLayers[layerIdx][i + 1]] =
+                        [testLayers[layerIdx][i + 1], testLayers[layerIdx][i]];
+
+                        const testCrossings = this.countCrossings(testLayers, edges);
+
+                        if (testCrossings < currentCrossings) {
+                            result = testLayers;
+                            currentCrossings = testCrossings;
+                            improved = true;
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         countCrossings(layers, edges) {
@@ -508,38 +755,56 @@
                 // Top to Bottom
                 layers.forEach((layer, layerIndex) => {
                     const maxWidth = Math.max(...layers.map(l => l.length));
-                    const startCol = Math.floor((maxWidth - layer.length) / 2);
+
+                    // STRICT GRID LAYOUT: All nodes must be on integer grid positions
+                    // No fractional spacing allowed
+                    const layerWidth = layer.length;
+
+                    // Calculate starting column to center the layer
+                    const startCol = Math.floor((maxWidth - layerWidth) / 2);
 
                     layer.forEach((node, nodeIndex) => {
-                        if (!node.startsWith('dummy_')) {
-                            positions[node] = {
-                                row: layerIndex,
-                                col: startCol + nodeIndex,
-                                x: (startCol + nodeIndex) * this.cellWidth + this.cellWidth / 2,
-                                y: layerIndex * this.cellHeight + this.cellHeight / 2,
-                                gridX: startCol + nodeIndex,
-                                gridY: layerIndex
-                            };
-                        }
+                        const col = startCol + nodeIndex;
+
+                        // Create positions for ALL nodes including dummy nodes
+                        // ENFORCE: col and row must be integers
+                        positions[node] = {
+                            row: layerIndex,
+                            col: col,
+                            x: col * this.cellWidth + this.cellWidth / 2,
+                            y: layerIndex * this.cellHeight + this.cellHeight / 2,
+                            gridX: col,
+                            gridY: layerIndex,
+                            isDummy: node.startsWith('dummy_')
+                        };
                     });
                 });
             } else {
                 // Left to Right
                 layers.forEach((layer, layerIndex) => {
                     const maxHeight = Math.max(...layers.map(l => l.length));
-                    const startRow = Math.floor((maxHeight - layer.length) / 2);
+
+                    // STRICT GRID LAYOUT: All nodes must be on integer grid positions
+                    // No fractional spacing allowed
+                    const layerHeight = layer.length;
+
+                    // Calculate starting row to center the layer
+                    const startRow = Math.floor((maxHeight - layerHeight) / 2);
 
                     layer.forEach((node, nodeIndex) => {
-                        if (!node.startsWith('dummy_')) {
-                            positions[node] = {
-                                row: startRow + nodeIndex,
-                                col: layerIndex,
-                                x: layerIndex * this.cellWidth + this.cellWidth / 2,
-                                y: (startRow + nodeIndex) * this.cellHeight + this.cellHeight / 2,
-                                gridX: layerIndex,
-                                gridY: startRow + nodeIndex
-                            };
-                        }
+                        const row = startRow + nodeIndex;
+
+                        // Create positions for ALL nodes including dummy nodes
+                        // ENFORCE: col and row must be integers
+                        positions[node] = {
+                            row: row,
+                            col: layerIndex,
+                            x: layerIndex * this.cellWidth + this.cellWidth / 2,
+                            y: row * this.cellHeight + this.cellHeight / 2,
+                            gridX: layerIndex,
+                            gridY: row,
+                            isDummy: node.startsWith('dummy_')
+                        };
                     });
                 });
             }
@@ -549,29 +814,1695 @@
 
         routeEdges(positions, edges) {
             const routes = [];
+            const busMinGap = 20; // Minimum gap for bus routing
+
+            console.log('\n=== ROUTE EDGES WITH A* PATHFINDING ===');
+            console.log('Total edges:', edges.length);
+
+            // Create routing grid for A* pathfinding (obstacle avoidance)
+            console.log('Creating routing grid for obstacle avoidance...');
+            const gridData = this.createRoutingGrid(positions, 10);
+
+            if (!gridData) {
+                console.error('Failed to create routing grid, falling back to old routing');
+                // Fall back to old routing method
+                edges.forEach(edge => {
+                    const points = this.routeDirectEdge(edge, positions, new Map(), busMinGap);
+                    if (points.length >= 2) {
+                        routes.push({...edge, points});
+                    }
+                });
+                return {routes, debugInfo: {nodePortInfo: {}, edgeScoring: []}};
+            }
+
+            console.log(`Grid created: ${gridData.rows}x${gridData.cols} cells`);
+
+            // Group edges by their original edge (for multi-segment edges with dummies)
+            const edgeSegments = new Map();
+            const directEdges = [];
 
             edges.forEach(edge => {
-                if (edge.from.startsWith('dummy_') || edge.to.startsWith('dummy_')) {
-                    return; // Skip dummy edges for now
+                if (edge.originalEdge) {
+                    // This is a dummy segment of a longer edge
+                    const key = `${edge.originalEdge.from}-${edge.originalEdge.to}`;
+                    if (!edgeSegments.has(key)) {
+                        edgeSegments.set(key, {
+                            originalEdge: edge.originalEdge,
+                            segments: []
+                        });
+                    }
+                    edgeSegments.get(key).segments.push(edge);
+                } else if (!edge.from.startsWith('dummy_') && !edge.to.startsWith('dummy_')) {
+                    directEdges.push(edge);
                 }
+            });
 
+            // Collect all edges (both direct and multi-segment) for bus routing
+            const allEdges = [
+                ...directEdges,
+                ...Array.from(edgeSegments.values()).map(({originalEdge}) => originalEdge)
+            ];
+
+            // Group edges by source node for bus routing
+            const edgesBySource = new Map();
+            allEdges.forEach(edge => {
+                if (!edgesBySource.has(edge.from)) {
+                    edgesBySource.set(edge.from, []);
+                }
+                edgesBySource.get(edge.from).push(edge);
+            });
+
+            console.log('\nEdges grouped by source:');
+            edgesBySource.forEach((edges, source) => {
+                console.log(`  ${source}: ${edges.length} edges → ${edges.map(e => e.to).join(', ')}`);
+            });
+
+            // FIXED: Pre-compute port assignments for all edges to prevent collisions
+            // This ensures incoming and outgoing edges use different ports on each node
+            const portAssignments = this.computePortAssignments(allEdges, positions);
+            const debugInfo = portAssignments.debugInfo;
+            console.log('\n=== PORT ASSIGNMENTS ===');
+            portAssignments.forEach((assignment, edgeKey) => {
+                if (edgeKey !== 'debugInfo') {
+                    console.log(`  ${edgeKey}: ${assignment.sourcePort} → ${assignment.targetPort}`);
+                }
+            });
+
+            // PHASE 2: Sort edges by Manhattan distance (route shortest edges first)
+            // Shorter edges are more constrained and should claim optimal paths early
+            console.log('\n=== SORTING EDGES BY DISTANCE ===');
+            const edgesWithDistance = allEdges.map(edge => {
                 const fromPos = positions[edge.from];
                 const toPos = positions[edge.to];
 
-                if (!fromPos || !toPos) return;
+                if (!fromPos || !toPos || fromPos.isDummy || toPos.isDummy) {
+                    return {edge, distance: Infinity};
+                }
 
-                // Simple straight line routing for now
-                // In production, you'd use orthogonal routing
-                routes.push({
-                    ...edge,
-                    points: [
-                        {x: fromPos.x, y: fromPos.y},
-                        {x: toPos.x, y: toPos.y}
-                    ]
+                const distance = Math.abs(toPos.x - fromPos.x) + Math.abs(toPos.y - fromPos.y);
+                return {edge, distance};
+            });
+
+            // Sort by distance (ascending - shortest first)
+            edgesWithDistance.sort((a, b) => a.distance - b.distance);
+
+            // Store routing order in debugInfo for display sorting
+            debugInfo.routingOrder = new Map();
+            edgesWithDistance.forEach(({edge, distance}, idx) => {
+                const originalFrom = edge.originalFrom || edge.from;
+                const originalTo = edge.originalTo || edge.to;
+                const edgeKey = `${originalFrom}→${originalTo}`;
+                debugInfo.routingOrder.set(edgeKey, {index: idx, distance});
+            });
+
+            console.log('Edge routing order (by distance):');
+            edgesWithDistance.slice(0, 10).forEach(({edge, distance}, idx) => {
+                console.log(`  ${idx + 1}. ${edge.from}→${edge.to}: ${distance.toFixed(0)}px`);
+            });
+            if (edgesWithDistance.length > 10) {
+                console.log(`  ... and ${edgesWithDistance.length - 10} more edges`);
+            }
+
+            // Route each edge with A* pathfinding (in sorted order)
+            edgesWithDistance.forEach(({edge, distance}) => {
+                if (distance === Infinity) return;
+
+                const fromPos = positions[edge.from];
+                if (!fromPos || fromPos.isDummy) return;
+
+                // Check if this is a multi-segment edge
+                const segmentData = edgeSegments.get(`${edge.from}-${edge.to}`);
+
+                if (segmentData) {
+                    // Multi-segment edge - route through dummy nodes
+                    const points = this.routeMultiSegmentEdge(edge, segmentData.segments, positions, edgesBySource, busMinGap, gridData, portAssignments);
+                    if (points.length >= 2) {
+                        routes.push({...edge, points});
+                    }
+                } else {
+                    // Direct edge - use A* pathfinding
+                    const points = this.routeDirectEdgeWithAStar(edge, positions, gridData, portAssignments);
+                    if (points.length >= 2) {
+                        routes.push({
+                            ...edge,
+                            points,
+                            isFallback: points.isFallback || false
+                        });
+                    }
+                }
+            });
+
+            console.log(`\n=== FINAL ROUTES: ${routes.length} edges ===`);
+            routes.forEach((r, idx) => {
+                console.log(`Route ${idx}: ${r.from}→${r.to}, ${r.points.length} points (pts: ${r.points.map(p => `(${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → ')}`);
+            });
+
+            return {routes, debugInfo};
+        }
+
+        routeDirectEdge(edge, positions, edgesBySource, busMinGap) {
+            const fromPos = positions[edge.from];
+            const toPos = positions[edge.to];
+
+            if (!fromPos || !toPos) return [];
+
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+            const edgesFromSource = edgesBySource.get(edge.from) || [];
+
+            const points = [];
+
+            if (this.direction === 'TB') {
+                // Start from bottom center of source node
+                const startPoint = {x: fromPos.x, y: fromPos.y + nodeHeight / 2};
+                points.push(startPoint);
+
+                // Check if we need to route around obstacles
+                const needsRouting = Math.abs(toPos.x - fromPos.x) > 1;
+
+                if (needsRouting) {
+                    // Check if there are nodes between source and target that we need to avoid
+                    const betweenNodes = this.getNodesBetween(fromPos, toPos, positions);
+
+                    if (betweenNodes.length > 0) {
+                        // Route around obstacles using grid-aligned paths
+                        const goLeft = toPos.x < fromPos.x;
+
+                        // Calculate grid-aligned side position
+                        // Go to the edge of the current cell, then one more cell over
+                        const currentCellLeft = fromPos.gridX * this.cellWidth;
+                        const currentCellRight = (fromPos.gridX + 1) * this.cellWidth;
+                        const sideX = goLeft ? currentCellLeft : currentCellRight;
+
+                        // Go down to the next grid line (between layers)
+                        const nextGridY = (fromPos.gridY + 1) * this.cellHeight;
+                        points.push({x: startPoint.x, y: nextGridY});
+
+                        // Go to the side along the grid line
+                        points.push({x: sideX, y: nextGridY});
+
+                        // Go down to the target's grid row (one cell above target)
+                        const targetGridY = (toPos.gridY) * this.cellHeight;
+                        points.push({x: sideX, y: targetGridY});
+
+                        // Go to target X along the grid line
+                        points.push({x: toPos.x, y: targetGridY});
+                    } else if (edgesFromSource.length > 1) {
+                        // Multiple edges, no obstacles - check if same layer
+                        const targetLayers = edgesFromSource.map(e => positions[e.to]?.row).filter(r => r !== undefined);
+                        const sameLayer = targetLayers.every(layer => layer === targetLayers[0]);
+
+                        if (sameLayer) {
+                            // All targets on same layer - use bus routing on grid line
+                            const busY = toPos.gridY * this.cellHeight;
+                            points.push({x: startPoint.x, y: busY});
+                            points.push({x: toPos.x, y: busY});
+                        } else {
+                            // Different layers - use midpoint on grid line
+                            const midGridY = Math.floor((fromPos.gridY + toPos.gridY) / 2) * this.cellHeight + this.cellHeight / 2;
+                            points.push({x: startPoint.x, y: midGridY});
+                            points.push({x: toPos.x, y: midGridY});
+                        }
+                    } else {
+                        // Single edge, no obstacles - use midpoint on grid line
+                        const midGridY = Math.floor((fromPos.gridY + toPos.gridY) / 2) * this.cellHeight + this.cellHeight / 2;
+                        points.push({x: startPoint.x, y: midGridY});
+                        points.push({x: toPos.x, y: midGridY});
+                    }
+                }
+
+                // End at top center of target node
+                points.push({x: toPos.x, y: toPos.y - nodeHeight / 2});
+            }
+
+            return this.simplifyOrthogonalPath(points);
+        }
+
+        /**
+         * Route a direct edge using A* pathfinding for obstacle avoidance
+         * @param {Object} edge - Edge to route
+         * @param {Object} positions - Node positions
+         * @param {Object} gridData - Routing grid from createRoutingGrid
+         * @returns {Array} Array of {x, y} points forming the path
+         */
+        /**
+         * Compute port assignments using LAYER-BASED strategy
+         *
+         * STRATEGY:
+         * - Forward edges (going down/right layers): Use primary flow ports (bottom→top for TB, right→left for LR)
+         * - Backward edges (going up/left layers): Use secondary ports (side ports) to avoid collision
+         * - Same-layer edges: Use side ports
+         *
+         * BENEFITS:
+         * ✅ Minimizes crossings - all forward flow uses consistent port direction
+         * ✅ Prevents collisions - forward vs backward use different port types (vertical vs horizontal)
+         * ✅ Clear visual separation - easy to distinguish forward flow from back-edges
+         * ✅ Industry standard - matches Sugiyama algorithm principles
+         *
+         * @param {Array} edges - All edges in the graph
+         * @param {Object} positions - Node positions (contains layer info in row/col properties)
+         * @returns {Map} Map of edge key to {sourcePort, targetPort}
+         */
+        computePortAssignments(edges, positions) {
+            const portAssignments = new Map();
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+
+            // SCORING-BASED PORT ASSIGNMENT STRATEGY
+            // Evaluate all port pairs and select the best based on multiple criteria:
+            // 1. Direction separation (hard constraint)
+            // 2. Layer alignment (primary)
+            // 3. Proximity
+            // 4. Label grouping
+            // 5. Port occupancy balance
+            // 6. Straight path preference
+
+            console.log('\n=== SCORING-BASED PORT ASSIGNMENT ===');
+
+            // Track port usage for occupancy balancing AND direction separation
+            const portOccupancy = new Map(); // nodeId -> {top: count, right: count, bottom: count, left: count}
+            const labelPortMapping = new Map(); // nodeId -> {label -> portSide}
+            const portUsageByDirection = new Map(); // nodeId -> {top: 'in'|'out'|'both', right: ..., bottom: ..., left: ...}
+
+            // DEBUG: Collect debug information
+            const debugInfo = {
+                nodePortInfo: {},
+                edgeScoring: []
+            };
+
+            // Initialize tracking structures
+            // CRITICAL: Use originalFrom/originalTo to track the TRUE data flow direction
+            edges.forEach(edge => {
+                const originalSource = edge.originalFrom || edge.from;
+                const originalTarget = edge.originalTo || edge.to;
+
+                if (!portOccupancy.has(originalSource)) {
+                    portOccupancy.set(originalSource, {top: 0, right: 0, bottom: 0, left: 0});
+                }
+                if (!portOccupancy.has(originalTarget)) {
+                    portOccupancy.set(originalTarget, {top: 0, right: 0, bottom: 0, left: 0});
+                }
+                if (!labelPortMapping.has(originalSource)) {
+                    labelPortMapping.set(originalSource, new Map());
+                }
+                if (!labelPortMapping.has(originalTarget)) {
+                    labelPortMapping.set(originalTarget, new Map());
+                }
+                if (!portUsageByDirection.has(originalSource)) {
+                    portUsageByDirection.set(originalSource, {top: null, right: null, bottom: null, left: null});
+                }
+                if (!portUsageByDirection.has(originalTarget)) {
+                    portUsageByDirection.set(originalTarget, {top: null, right: null, bottom: null, left: null});
+                }
+
+                // DEBUG: Initialize node port info
+                if (!debugInfo.nodePortInfo[originalSource]) {
+                    debugInfo.nodePortInfo[originalSource] = {
+                        top: {direction: null, occupancy: 0, edges: []},
+                        right: {direction: null, occupancy: 0, edges: []},
+                        bottom: {direction: null, occupancy: 0, edges: []},
+                        left: {direction: null, occupancy: 0, edges: []}
+                    };
+                }
+                if (!debugInfo.nodePortInfo[originalTarget]) {
+                    debugInfo.nodePortInfo[originalTarget] = {
+                        top: {direction: null, occupancy: 0, edges: []},
+                        right: {direction: null, occupancy: 0, edges: []},
+                        bottom: {direction: null, occupancy: 0, edges: []},
+                        left: {direction: null, occupancy: 0, edges: []}
+                    };
+                }
+            });
+
+            // Get all outgoing and incoming edges per node for direction separation
+            // CRITICAL: Use ORIGINAL direction, not layout direction
+            const outgoingEdges = new Map();
+            const incomingEdges = new Map();
+            edges.forEach(edge => {
+                const originalSource = edge.originalFrom || edge.from;
+                const originalTarget = edge.originalTo || edge.to;
+
+                if (!outgoingEdges.has(originalSource)) outgoingEdges.set(originalSource, []);
+                if (!incomingEdges.has(originalTarget)) incomingEdges.set(originalTarget, []);
+                outgoingEdges.get(originalSource).push(edge);
+                incomingEdges.get(originalTarget).push(edge);
+            });
+
+            // For each edge, score all possible port pairs and select the best
+            edges.forEach(edge => {
+                // CRITICAL: Use ORIGINAL nodes for port assignment (data flow direction)
+                // but use LAYOUT positions for scoring (geometric calculations)
+                const originalSource = edge.originalFrom;
+                const originalTarget = edge.originalTo;
+
+                const fromPos = positions[originalSource];  // Layout position
+                const toPos = positions[originalTarget];      // Layout position
+
+                if (!fromPos || !toPos || fromPos.isDummy || toPos.isDummy) {
+                    return;
+                }
+
+                // Get all possible port sides
+                const portSides = ['top', 'right', 'bottom', 'left'];
+
+                let bestScore = -Infinity;
+                let bestSourcePort = null;
+                let bestTargetPort = null;
+
+                // Try all combinations of source and target ports
+                let bestBreakdown = {};
+                const allPortScores = []; // Collect ALL port pair scores for debug display
+
+                for (const sourcePortSide of portSides) {
+                    for (const targetPortSide of portSides) {
+                        const result = this.scorePortPair(
+                            sourcePortSide,
+                            targetPortSide,
+                            edge,
+                            fromPos,
+                            toPos,
+                            portOccupancy,
+                            labelPortMapping,
+                            outgoingEdges,
+                            incomingEdges,
+                            portUsageByDirection,
+                            originalSource,
+                            originalTarget
+                        );
+
+                        // Store all port pair scores for debug display
+                        // Handle both -Infinity (violation) and {score, breakdown} (valid)
+                        const scoreValue = typeof result === 'number' ? result : result.score;
+                        const breakdownValue = typeof result === 'number' ? {} : result.breakdown;
+
+                        allPortScores.push({
+                            source: sourcePortSide,
+                            target: targetPortSide,
+                            score: scoreValue,
+                            breakdown: breakdownValue
+                        });
+
+                        if (scoreValue > bestScore) {
+                            bestScore = scoreValue;
+                            bestSourcePort = sourcePortSide;
+                            bestTargetPort = targetPortSide;
+                            bestBreakdown = breakdownValue;
+                        }
+                    }
+                }
+
+                const sourceLayer = this.direction === 'TB' ? fromPos.row : fromPos.col;
+                const targetLayer = this.direction === 'TB' ? toPos.row : toPos.col;
+                const edgeType = sourceLayer < targetLayer ? 'FORWARD' :
+                                sourceLayer > targetLayer ? 'BACKWARD' : 'SAME-LAYER';
+
+                console.log(`\n  Edge ${edge.from}→${edge.to}${edge.reversed ? ' [BACK-EDGE]' : ''} (${edgeType}, layers ${sourceLayer}→${targetLayer})`);
+                console.log(`    Original: ${originalSource}→${originalTarget}`);
+                console.log(`    Best ports: ${bestSourcePort} → ${bestTargetPort} (score: ${bestScore.toFixed(2)})`);
+
+                // Update port assignments
+                // CRITICAL: Store with ORIGINAL direction as key, not layout direction
+                // This ensures we can retrieve the correct ports regardless of reversal
+                const edgeKey = `${originalSource}-${originalTarget}`;
+                portAssignments.set(edgeKey, {
+                    sourcePort: bestSourcePort,
+                    targetPort: bestTargetPort,
+                    isReversed: edge.reversed === true
+                });
+
+                // Update occupancy tracking (use ORIGINAL nodes)
+                portOccupancy.get(originalSource)[bestSourcePort]++;
+                portOccupancy.get(originalTarget)[bestTargetPort]++;
+
+                // Update direction tracking (CRITICAL for enforcing separation)
+                // ALWAYS use originalFrom/originalTo to determine the true data flow direction
+                const sourceUsage = portUsageByDirection.get(originalSource);
+                const targetUsage = portUsageByDirection.get(originalTarget);
+
+                console.log(`    📍 Original edge: ${originalSource}→${originalTarget} (layout: ${edge.from}→${edge.to})`);
+
+                // Mark source port as 'out' (outgoing from original source)
+                if (sourceUsage[bestSourcePort] === null) {
+                    sourceUsage[bestSourcePort] = 'out';
+                } else if (sourceUsage[bestSourcePort] === 'in') {
+                    sourceUsage[bestSourcePort] = 'both'; // VIOLATION!
+                    console.warn(`    ⚠️  WARNING: Port ${bestSourcePort} on ${originalSource} now has both IN and OUT!`);
+                }
+
+                // Mark target port as 'in' (incoming to original target)
+                if (targetUsage[bestTargetPort] === null) {
+                    targetUsage[bestTargetPort] = 'in';
+                } else if (targetUsage[bestTargetPort] === 'out') {
+                    targetUsage[bestTargetPort] = 'both'; // VIOLATION!
+                    console.warn(`    ⚠️  WARNING: Port ${bestTargetPort} on ${originalTarget} now has both IN and OUT!`);
+                }
+
+                // Update label tracking (use ORIGINAL nodes)
+                const label = edge.label || '';
+                if (label) {
+                    labelPortMapping.get(originalSource).set(label, bestSourcePort);
+                    labelPortMapping.get(originalTarget).set(label, bestTargetPort);
+                }
+
+                // DEBUG: Collect edge scoring information
+                debugInfo.edgeScoring.push({
+                    edgeId: `${originalSource}→${originalTarget}`,
+                    originalFrom: originalSource,
+                    originalTo: originalTarget,
+                    layoutFrom: edge.from,
+                    layoutTo: edge.to,
+                    isBackEdge: edge.reversed === true,
+                    selectedPorts: {source: bestSourcePort, target: bestTargetPort},
+                    selectedScore: bestScore,
+                    scoringBreakdown: bestBreakdown,
+                    allPortScores: allPortScores, // Include ALL port pair scores
+                    hasViolation: sourceUsage[bestSourcePort] === 'both' || targetUsage[bestTargetPort] === 'both'
                 });
             });
 
-            return routes;
+            // DEBUG: Update node port info with final state
+            portUsageByDirection.forEach((portUsage, nodeId) => {
+                if (debugInfo.nodePortInfo[nodeId]) {
+                    ['top', 'right', 'bottom', 'left'].forEach(port => {
+                        debugInfo.nodePortInfo[nodeId][port].direction = portUsage[port];
+                        debugInfo.nodePortInfo[nodeId][port].occupancy = portOccupancy.get(nodeId)[port];
+                    });
+                }
+            });
+
+            portAssignments.debugInfo = debugInfo;
+            return portAssignments;
+        }
+
+        /**
+         * Score a port pair based on multiple criteria
+         * Returns {score, breakdown} where breakdown contains individual criterion scores
+         */
+        scorePortPair(sourcePortSide, targetPortSide, edge, fromPos, toPos,
+                      portOccupancy, labelPortMapping, outgoingEdges, incomingEdges, portUsageByDirection,
+                      originalSource, originalTarget) {
+            let score = 0;
+            const breakdown = {};
+
+            // Get layer information
+            const sourceLayer = this.direction === 'TB' ? fromPos.row : fromPos.col;
+            const targetLayer = this.direction === 'TB' ? toPos.row : toPos.col;
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+
+            // 1. DIRECTION SEPARATION (HARD CONSTRAINT) - Weight: ∞
+            // Incoming and outgoing edges MUST use different port sides
+            // This is NON-NEGOTIABLE per user requirements
+            // CRITICAL: Use ORIGINAL nodes to check direction (data flow, not layout flow)
+
+            const sourceUsage = portUsageByDirection.get(originalSource);
+            const targetUsage = portUsageByDirection.get(originalTarget);
+
+            // Debug: Show current port usage
+            const sourcePortStatus = sourceUsage[sourcePortSide];
+            const targetPortStatus = targetUsage[targetPortSide];
+
+            // Check if source port is already used for INCOMING edges
+            // This edge is OUTGOING from ORIGINAL source, so source port must NOT be 'in'
+            if (sourceUsage[sourcePortSide] === 'in') {
+                console.log(`      ❌ DISQUALIFIED: ${originalSource}.${sourcePortSide} already used for INCOMING (this edge is OUTGOING)`);
+                return -Infinity;
+            }
+
+            // Check if target port is already used for OUTGOING edges
+            // This edge is INCOMING to ORIGINAL target, so target port must NOT be 'out'
+            if (targetUsage[targetPortSide] === 'out') {
+                console.log(`      ❌ DISQUALIFIED: ${originalTarget}.${targetPortSide} already used for OUTGOING (this edge is INCOMING)`);
+                return -Infinity;
+            }
+
+            // CRITICAL: Also check if port is already used for the SAME direction
+            // A port can only be used for ONE direction (all in OR all out, never both)
+            // So if this is an outgoing edge from source, source port must be null or 'out' (not 'in' or 'both')
+            if (sourceUsage[sourcePortSide] === 'both') {
+                console.log(`      ❌ DISQUALIFIED: ${originalSource}.${sourcePortSide} already has BOTH IN and OUT`);
+                return -Infinity;
+            }
+
+            // If this is an incoming edge to target, target port must be null or 'in' (not 'out' or 'both')
+            if (targetUsage[targetPortSide] === 'both') {
+                console.log(`      ❌ DISQUALIFIED: ${originalTarget}.${targetPortSide} already has BOTH IN and OUT`);
+                return -Infinity;
+            }
+
+            // Get edge counts for occupancy calculations (use ORIGINAL nodes)
+            const sourceOutgoing = outgoingEdges.get(originalSource) || [];
+            const sourceIncoming = incomingEdges.get(originalSource) || [];
+            const targetOutgoing = outgoingEdges.get(originalTarget) || [];
+            const targetIncoming = incomingEdges.get(originalTarget) || [];
+
+            // 2. LAYER ALIGNMENT (SOFT PREFERENCE) - Weight: 80/-40
+            // Forward edges PREFER vertical ports, backward edges PREFER horizontal ports
+            // This is a soft preference, not a hard constraint - other criteria can override it
+            // when they produce better results (e.g., port occupancy, label grouping)
+            let isLayerAligned = false;
+            let isLayerMisaligned = false;
+
+            if (this.direction === 'TB') {
+                if (sourceLayer < targetLayer) {
+                    // Forward edge - PREFER vertical ports (bottom→top)
+                    isLayerAligned = (sourcePortSide === 'bottom' && targetPortSide === 'top');
+                    isLayerMisaligned = !isLayerAligned;
+                } else if (sourceLayer > targetLayer) {
+                    // Backward edge - PREFER horizontal ports (left/right→left/right)
+                    isLayerAligned = ((sourcePortSide === 'left' || sourcePortSide === 'right') &&
+                                     (targetPortSide === 'left' || targetPortSide === 'right'));
+                    isLayerMisaligned = !isLayerAligned;
+                } else {
+                    // Same layer - PREFER horizontal ports (left/right→left/right)
+                    isLayerAligned = ((sourcePortSide === 'left' || sourcePortSide === 'right') &&
+                                     (targetPortSide === 'left' || targetPortSide === 'right'));
+                    isLayerMisaligned = !isLayerAligned;
+                }
+            } else {
+                // LR layout
+                if (sourceLayer < targetLayer) {
+                    // Forward edge - PREFER horizontal ports (right→left)
+                    isLayerAligned = (sourcePortSide === 'right' && targetPortSide === 'left');
+                    isLayerMisaligned = !isLayerAligned;
+                } else if (sourceLayer > targetLayer) {
+                    // Backward edge - PREFER vertical ports (top/bottom→top/bottom)
+                    isLayerAligned = ((sourcePortSide === 'top' || sourcePortSide === 'bottom') &&
+                                     (targetPortSide === 'top' || targetPortSide === 'bottom'));
+                    isLayerMisaligned = !isLayerAligned;
+                } else {
+                    // Same layer - PREFER vertical ports (top/bottom→top/bottom)
+                    isLayerAligned = ((sourcePortSide === 'top' || sourcePortSide === 'bottom') &&
+                                     (targetPortSide === 'top' || targetPortSide === 'bottom'));
+                    isLayerMisaligned = !isLayerAligned;
+                }
+            }
+
+            // 2. LAYER ALIGNMENT - Weight: 80/-40 (soft preference, not hard constraint)
+            let layerAlignmentScore = 0;
+            // if (isLayerAligned) {
+            //     layerAlignmentScore = 80; // Bonus for preferred alignment
+            // } else if (isLayerMisaligned) {
+            //     layerAlignmentScore = -40; // Mild penalty for non-preferred alignment
+            // }
+            score += layerAlignmentScore;
+            breakdown['Layer Alignment'] = layerAlignmentScore;
+
+            // 3. PROXIMITY - Weight: 70
+            // Calculate which port pair is geometrically closest based on grid positions
+            // For grid-based layouts, we need to consider which ports are actually closer
+            // Example: if source is at (0,0) and target is at (1,1), then:
+            //   - source's bottom/right ports are closer to target's top/left ports
+            //   - source's top/left ports are farther from target's bottom/right ports
+
+            const sourcePortPos = this.getPortPosition(fromPos, sourcePortSide, 140, 60);
+            const targetPortPos = this.getPortPosition(toPos, targetPortSide, 140, 60);
+
+            // Calculate Manhattan distance between port positions
+            const distance = Math.abs(sourcePortPos.x - targetPortPos.x) +
+                           Math.abs(sourcePortPos.y - targetPortPos.y);
+
+            // Calculate the "ideal" distance based on grid cell positions
+            // This represents the minimum possible distance for this node pair
+            const gridCellWidth = 180;  // Grid cell width
+            const gridCellHeight = 100; // Grid cell height
+            const gridDistance = Math.abs(toPos.col - fromPos.col) * gridCellWidth +
+                                Math.abs(toPos.row - fromPos.row) * gridCellHeight;
+
+            // Proximity score: reward port pairs that minimize actual distance
+            // Normalize by the grid distance to account for layout scale
+            const maxPossibleDistance = gridDistance + 300; // Add buffer for node size
+            const proximityScore = 70 * (1 - Math.min(distance / maxPossibleDistance, 1));
+            score += proximityScore;
+            breakdown['Proximity'] = proximityScore;
+
+            // 4. LABEL GROUPING - Weight: 60
+            const label = edge.label || '';
+            let labelGroupingScore = 0;
+            if (label) {
+                const sourceLabelMap = labelPortMapping.get(originalSource);
+                const targetLabelMap = labelPortMapping.get(originalTarget);
+
+                // Check if this label already has a preferred port on source node
+                if (sourceLabelMap.has(label) && sourceLabelMap.get(label) === sourcePortSide) {
+                    labelGroupingScore += 60; // Same label uses same port
+                } else if (portOccupancy.get(originalSource)[sourcePortSide] === 0) {
+                    labelGroupingScore += 30; // Empty port
+                }
+
+                // Check target node
+                if (targetLabelMap.has(label) && targetLabelMap.get(label) === targetPortSide) {
+                    labelGroupingScore += 60;
+                } else if (portOccupancy.get(originalTarget)[targetPortSide] === 0) {
+                    labelGroupingScore += 30;
+                }
+            }
+            score += labelGroupingScore;
+            breakdown['Label Grouping'] = labelGroupingScore;
+
+            // 5. PORT OCCUPANCY BALANCE - Weight: 60
+            // Prefer less-occupied ports to balance load across all ports
+            const sourceOccupancy = portOccupancy.get(originalSource);
+            const targetOccupancy = portOccupancy.get(originalTarget);
+            const sourceTotalEdges = sourceOutgoing.length + sourceIncoming.length;
+            const targetTotalEdges = targetOutgoing.length + targetIncoming.length;
+
+            const sourceOccupancyRatio = sourceTotalEdges > 0 ?
+                sourceOccupancy[sourcePortSide] / sourceTotalEdges : 0;
+            const targetOccupancyRatio = targetTotalEdges > 0 ?
+                targetOccupancy[targetPortSide] / targetTotalEdges : 0;
+
+            const occupancyScore = 60 * (1 - sourceOccupancyRatio) + 60 * (1 - targetOccupancyRatio);
+            score += occupancyScore;
+            breakdown['Port Occupancy'] = occupancyScore;
+
+            // 6. STRAIGHT PATH PREFERENCE - Weight: 50
+            // Prefer port pairs that allow straight-line routing
+            const canRouteStraight = (
+                (sourcePortPos.x === targetPortPos.x) ||
+                (sourcePortPos.y === targetPortPos.y)
+            );
+            let straightPathScore = 0;
+            if (canRouteStraight) {
+                straightPathScore = 50;
+                score += straightPathScore;
+            }
+            breakdown['Straight Path'] = straightPathScore;
+
+            // 7. DIRECTION CONSISTENCY - Weight: 100
+            // Reward port pairs where the geometric direction matches the data flow direction
+            // Score based on how many directions match (horizontal, vertical, or both)
+            // Example: if target is ABOVE and LEFT of source (rowDiff < 0, colDiff < 0):
+            //   - top->bottom: +50 (vertical match)
+            //   - left->right: +50 (horizontal match)
+            //   - top->bottom + left->right: +100 (both match)
+            //   - bottom->top: -50 (opposite vertical)
+            //   - right->left: -50 (opposite horizontal)
+            let directionConsistencyScore = 0;
+
+            // Determine geometric direction from source to target
+            const colDiff = toPos.col - fromPos.col;
+            const rowDiff = toPos.row - fromPos.row;
+
+            // Determine which directions the target is relative to source
+            const targetIsRight = colDiff > 0;
+            const targetIsLeft = colDiff < 0;
+            const targetIsBelow = rowDiff > 0;
+            const targetIsAbove = rowDiff < 0;
+            const targetIsSameCol = colDiff === 0;
+            const targetIsSameRow = rowDiff === 0;
+
+            // Determine which directions the ports point
+            const sourcePointsRight = sourcePortSide === 'right';
+            const sourcePointsLeft = sourcePortSide === 'left';
+            const sourcePointsDown = sourcePortSide === 'bottom';
+            const sourcePointsUp = sourcePortSide === 'top';
+
+            const targetPointsRight = targetPortSide === 'right';
+            const targetPointsLeft = targetPortSide === 'left';
+            const targetPointsDown = targetPortSide === 'bottom';
+            const targetPointsUp = targetPortSide === 'top';
+
+            // Score horizontal direction consistency
+            let horizontalScore = 0;
+            if (targetIsRight) {
+                // Target is to the right: source should point right, target should point left
+                if (sourcePointsRight && targetPointsLeft) {
+                    horizontalScore = 50; // Perfect horizontal alignment
+                } else if (sourcePointsRight || targetPointsLeft) {
+                    horizontalScore = 25; // Partial horizontal alignment
+                } else if (sourcePointsLeft || targetPointsRight) {
+                    horizontalScore = -50; // Opposite horizontal direction
+                }
+            } else if (targetIsLeft) {
+                // Target is to the left: source should point left, target should point right
+                if (sourcePointsLeft && targetPointsRight) {
+                    horizontalScore = 50; // Perfect horizontal alignment
+                } else if (sourcePointsLeft || targetPointsRight) {
+                    horizontalScore = 25; // Partial horizontal alignment
+                } else if (sourcePointsRight || targetPointsLeft) {
+                    horizontalScore = -50; // Opposite horizontal direction
+                }
+            } else if (targetIsSameCol) {
+                // Target is in same column: horizontal ports are less ideal
+                if (sourcePointsRight || sourcePointsLeft || targetPointsRight || targetPointsLeft) {
+                    horizontalScore = -25; // Slight penalty for using horizontal ports when not needed
+                }
+            }
+
+            // Score vertical direction consistency
+            let verticalScore = 0;
+            if (targetIsBelow) {
+                // Target is below: source should point down, target should point up
+                if (sourcePointsDown && targetPointsUp) {
+                    verticalScore = 50; // Perfect vertical alignment
+                } else if (sourcePointsDown || targetPointsUp) {
+                    verticalScore = 25; // Partial vertical alignment
+                } else if (sourcePointsUp || targetPointsDown) {
+                    verticalScore = -50; // Opposite vertical direction
+                }
+            } else if (targetIsAbove) {
+                // Target is above: source should point up, target should point down
+                if (sourcePointsUp && targetPointsDown) {
+                    verticalScore = 50; // Perfect vertical alignment
+                } else if (sourcePointsUp || targetPointsDown) {
+                    verticalScore = 25; // Partial vertical alignment
+                } else if (sourcePointsDown || targetPointsUp) {
+                    verticalScore = -50; // Opposite vertical direction
+                }
+            } else if (targetIsSameRow) {
+                // Target is in same row: vertical ports are less ideal
+                if (sourcePointsDown || sourcePointsUp || targetPointsDown || targetPointsUp) {
+                    verticalScore = -25; // Slight penalty for using vertical ports when not needed
+                }
+            }
+
+            // Combine horizontal and vertical scores
+            directionConsistencyScore = horizontalScore + verticalScore;
+            score += directionConsistencyScore;
+            breakdown['Direction Consistency'] = directionConsistencyScore;
+
+            return {score, breakdown};
+        }
+
+        /**
+         * Get the absolute position of a port on a node
+         */
+        getPortPosition(nodePos, portSide, nodeWidth, nodeHeight) {
+            const hw = nodeWidth / 2;
+            const hh = nodeHeight / 2;
+
+            const offsets = {
+                top: {x: 0, y: -hh},
+                right: {x: hw, y: 0},
+                bottom: {x: 0, y: hh},
+                left: {x: -hw, y: 0}
+            };
+
+            const offset = offsets[portSide];
+            return {
+                x: nodePos.x + offset.x,
+                y: nodePos.y + offset.y
+            };
+        }
+
+        /**
+         * Get port candidates for a node based on its type
+         * Returns an array of port positions relative to node center
+         */
+        getPortCandidates(node, nodeWidth, nodeHeight) {
+            const hw = nodeWidth / 2;
+            const hh = nodeHeight / 2;
+
+            // For diamond nodes, ports are at the corners
+            if (node && node.type === 'decision') {
+                return {
+                    top: {x: 0, y: -hh, side: 'top'},
+                    right: {x: hw, y: 0, side: 'right'},
+                    bottom: {x: 0, y: hh, side: 'bottom'},
+                    left: {x: -hw, y: 0, side: 'left'}
+                };
+            }
+
+            // For rectangular nodes, ports are at the middle of each side
+            return {
+                top: {x: 0, y: -hh, side: 'top'},
+                right: {x: hw, y: 0, side: 'right'},
+                bottom: {x: 0, y: hh, side: 'bottom'},
+                left: {x: -hw, y: 0, side: 'left'}
+            };
+        }
+
+        /**
+         * Select the best port pair for an edge based on relative positions
+         * Returns {sourcePort, targetPort} with absolute coordinates
+         * @param {Object} fromNode - Source node
+         * @param {Object} toNode - Target node
+         * @param {Object} fromPos - Source position
+         * @param {Object} toPos - Target position
+         * @param {number} nodeWidth - Node width
+         * @param {number} nodeHeight - Node height
+         * @param {boolean} isReversed - Whether this is a back-edge (reversed for layout)
+         */
+        selectBestPorts(fromNode, toNode, fromPos, toPos, nodeWidth, nodeHeight, isReversed = false) {
+            const sourcePorts = this.getPortCandidates(fromNode, nodeWidth, nodeHeight);
+            const targetPorts = this.getPortCandidates(toNode, nodeWidth, nodeHeight);
+
+            // Calculate relative direction from source to target
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+
+            // Determine primary direction
+            let sourcePortSide, targetPortSide;
+
+            if (this.direction === 'TB') {
+                // Top-to-Bottom layout
+                if (dy > 0) {
+                    // Target is below source (forward edge)
+                    if (isReversed) {
+                        // FIXED: For back-edges, use opposite sides to avoid collision
+                        // Data flows upward, so exit from top and enter from bottom
+                        sourcePortSide = 'top';
+                        targetPortSide = 'bottom';
+                    } else {
+                        // Normal forward edge: exit from bottom, enter from top
+                        sourcePortSide = 'bottom';
+                        targetPortSide = 'top';
+                    }
+                } else {
+                    // Target is above source (back edge in position)
+                    if (isReversed) {
+                        // Back-edge going upward: use top/bottom
+                        sourcePortSide = 'top';
+                        targetPortSide = 'bottom';
+                    } else {
+                        // Forward edge going upward
+                        sourcePortSide = 'bottom';
+                        targetPortSide = 'top';
+                    }
+                }
+
+                // Adjust for horizontal offset
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    // More horizontal than vertical
+                    if (isReversed) {
+                        // For back-edges with horizontal component, prefer horizontal ports
+                        sourcePortSide = dx > 0 ? 'left' : 'right';
+                        targetPortSide = dx > 0 ? 'right' : 'left';
+                    } else {
+                        sourcePortSide = dx > 0 ? 'right' : 'left';
+                        targetPortSide = dx > 0 ? 'left' : 'right';
+                    }
+                }
+            } else {
+                // Left-to-Right layout
+                if (dx > 0) {
+                    // Target is to the right of source (forward edge)
+                    if (isReversed) {
+                        // FIXED: For back-edges, use opposite sides to avoid collision
+                        // Data flows leftward, so exit from left and enter from right
+                        sourcePortSide = 'left';
+                        targetPortSide = 'right';
+                    } else {
+                        // Normal forward edge: exit from right, enter from left
+                        sourcePortSide = 'right';
+                        targetPortSide = 'left';
+                    }
+                } else {
+                    // Target is to the left of source (back edge in position)
+                    if (isReversed) {
+                        // Back-edge going leftward: use left/right
+                        sourcePortSide = 'left';
+                        targetPortSide = 'right';
+                    } else {
+                        // Forward edge going leftward
+                        sourcePortSide = 'right';
+                        targetPortSide = 'left';
+                    }
+                }
+
+                // Adjust for vertical offset
+                if (Math.abs(dy) > Math.abs(dx)) {
+                    // More vertical than horizontal
+                    if (isReversed) {
+                        // For back-edges with vertical component, prefer vertical ports
+                        sourcePortSide = dy > 0 ? 'top' : 'bottom';
+                        targetPortSide = dy > 0 ? 'bottom' : 'top';
+                    } else {
+                        sourcePortSide = dy > 0 ? 'bottom' : 'top';
+                        targetPortSide = dy > 0 ? 'top' : 'bottom';
+                    }
+                }
+            }
+
+            const sourcePort = sourcePorts[sourcePortSide];
+            const targetPort = targetPorts[targetPortSide];
+
+            return {
+                source: {
+                    x: fromPos.x + sourcePort.x,
+                    y: fromPos.y + sourcePort.y,
+                    side: sourcePort.side
+                },
+                target: {
+                    x: toPos.x + targetPort.x,
+                    y: toPos.y + targetPort.y,
+                    side: targetPort.side
+                }
+            };
+        }
+
+        routeDirectEdgeWithAStar(edge, positions, gridData, portAssignments) {
+            const fromPos = positions[edge.from];
+            const toPos = positions[edge.to];
+
+            if (!fromPos || !toPos) return [];
+
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+
+            // Get the actual node objects to determine their types
+            const fromNode = this.nodes.find(n => n.id === edge.from);
+            const toNode = this.nodes.find(n => n.id === edge.to);
+
+            // FIXED: Use pre-computed port assignments to prevent collisions
+            // CRITICAL: Look up using ORIGINAL direction, not layout direction
+            const originalFrom = edge.originalFrom || edge.from;
+            const originalTo = edge.originalTo || edge.to;
+            const edgeKey = `${originalFrom}-${originalTo}`;
+            const assignment = portAssignments.get(edgeKey);
+
+            let ports;
+            if (assignment) {
+                console.log(`    ✓ Found assignment for ${edgeKey}: ${assignment.sourcePort}→${assignment.targetPort}`);
+                // Use pre-computed port assignment
+                // Assignment is always for ORIGINAL direction (originalFrom → originalTo)
+                // We need to apply it to the correct nodes based on layout
+
+                const isReversed = assignment.isReversed === true;
+
+                if (isReversed) {
+                    // For reversed edges:
+                    // - originalFrom is at layout toPos
+                    // - originalTo is at layout fromPos
+                    // - assignment.sourcePort is for originalFrom
+                    // - assignment.targetPort is for originalTo
+
+                    const originalSourcePorts = this.getPortCandidates(toNode, nodeWidth, nodeHeight);  // originalFrom is at toNode
+                    const originalTargetPorts = this.getPortCandidates(fromNode, nodeWidth, nodeHeight); // originalTo is at fromNode
+
+                    const originalSourcePort = originalSourcePorts[assignment.sourcePort];
+                    const originalTargetPort = originalTargetPorts[assignment.targetPort];
+
+                    ports = {
+                        source: {
+                            x: toPos.x + originalSourcePort.x,      // originalFrom is at toPos
+                            y: toPos.y + originalSourcePort.y,
+                            side: originalSourcePort.side
+                        },
+                        target: {
+                            x: fromPos.x + originalTargetPort.x,    // originalTo is at fromPos
+                            y: fromPos.y + originalTargetPort.y,
+                            side: originalTargetPort.side
+                        }
+                    };
+                } else {
+                    // Normal edge: originalFrom is at fromPos, originalTo is at toPos
+                    const sourcePorts = this.getPortCandidates(fromNode, nodeWidth, nodeHeight);
+                    const targetPorts = this.getPortCandidates(toNode, nodeWidth, nodeHeight);
+
+                    const sourcePort = sourcePorts[assignment.sourcePort];
+                    const targetPort = targetPorts[assignment.targetPort];
+
+                    ports = {
+                        source: {
+                            x: fromPos.x + sourcePort.x,
+                            y: fromPos.y + sourcePort.y,
+                            side: sourcePort.side
+                        },
+                        target: {
+                            x: toPos.x + targetPort.x,
+                            y: toPos.y + targetPort.y,
+                            side: targetPort.side
+                        }
+                    };
+                }
+            } else {
+                // Fallback to old method if no assignment found
+                console.log(`    ⚠️  NO ASSIGNMENT FOUND for ${edgeKey}. Falling back to selectBestPorts.`);
+                const isReversed = edge.reversed || false;
+                ports = this.selectBestPorts(fromNode, toNode, fromPos, toPos, nodeWidth, nodeHeight, isReversed);
+            }
+
+            const startPoint = ports.source;
+            const endPoint = ports.target;
+
+            const edgeType = edge.reversed ? '(back-edge)' : '';
+            console.log(`  Port selection: ${edge.from}[${ports.source.side}] → ${edge.to}[${ports.target.side}] ${edgeType}`);
+
+            // Use A* to find orthogonal path avoiding obstacles
+            const path = this.findOrthogonalPath(startPoint, endPoint, gridData, ports);
+
+            const status = path.isFallback ? '⚠️ FALLBACK' : '✓';
+            console.log(`  ${status} Routed ${edge.from}→${edge.to}: ${path.length} points`);
+
+            return path;
+        }
+
+        getNodesBetween(fromPos, toPos, positions) {
+            // Find nodes that are spatially between source and target
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+            const betweenNodes = [];
+
+            const minX = Math.min(fromPos.x, toPos.x);
+            const maxX = Math.max(fromPos.x, toPos.x);
+            const minY = Math.min(fromPos.y, toPos.y);
+            const maxY = Math.max(fromPos.y, toPos.y);
+
+            Object.entries(positions).forEach(([nodeId, pos]) => {
+                if (pos.isDummy) return; // Skip dummy nodes
+
+                // Check if node is in the rectangular area between source and target
+                const inXRange = pos.x >= minX - nodeWidth / 2 && pos.x <= maxX + nodeWidth / 2;
+                const inYRange = pos.y > minY + nodeHeight / 2 && pos.y < maxY - nodeHeight / 2;
+
+                if (inXRange && inYRange) {
+                    betweenNodes.push({id: nodeId, pos});
+                }
+            });
+
+            return betweenNodes;
+        }
+
+        // ============================================================================
+        // A* PATHFINDING FOR ORTHOGONAL EDGE ROUTING WITH OBSTACLE AVOIDANCE
+        // ============================================================================
+
+        /**
+         * Create a routing grid that marks cells occupied by nodes as obstacles
+         * @param {Object} positions - Node positions
+         * @param {number} gridResolution - Grid cell size in pixels (smaller = more precise but slower)
+         * @returns {Object} Grid data structure with obstacle information
+         */
+        createRoutingGrid(positions, gridResolution = 10) {
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+
+            // Find canvas bounds
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            Object.values(positions).forEach(pos => {
+                if (pos.isDummy) return;
+                if (typeof pos.x !== 'number' || typeof pos.y !== 'number') return;
+                minX = Math.min(minX, pos.x - nodeWidth);
+                minY = Math.min(minY, pos.y - nodeHeight);
+                maxX = Math.max(maxX, pos.x + nodeWidth);
+                maxY = Math.max(maxY, pos.y + nodeHeight);
+            });
+
+            // Validate bounds
+            if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+                console.error('Invalid bounds for routing grid:', {minX, minY, maxX, maxY});
+                return null;
+            }
+
+            // Add padding
+            const padding = 100;
+            minX -= padding;
+            minY -= padding;
+            maxX += padding;
+            maxY += padding;
+
+            const width = maxX - minX;
+            const height = maxY - minY;
+            const cols = Math.ceil(width / gridResolution);
+            const rows = Math.ceil(height / gridResolution);
+
+            console.log(`  Creating grid: ${rows} rows x ${cols} cols (${width}x${height} px, resolution: ${gridResolution}px)`);
+
+            // Create grid (true = walkable, false = obstacle)
+            const grid = Array(rows).fill(null).map(() => Array(cols).fill(true));
+
+            // Mark obstacles (nodes)
+            Object.entries(positions).forEach(([nodeId, pos]) => {
+                if (pos.isDummy) return;
+
+                // Get node bounds with some padding
+                const obstaclePadding = 5;
+                const left = pos.x - nodeWidth / 2 - obstaclePadding;
+                const right = pos.x + nodeWidth / 2 + obstaclePadding;
+                const top = pos.y - nodeHeight / 2 - obstaclePadding;
+                const bottom = pos.y + nodeHeight / 2 + obstaclePadding;
+
+                // Convert to grid coordinates
+                const gridLeft = Math.floor((left - minX) / gridResolution);
+                const gridRight = Math.ceil((right - minX) / gridResolution);
+                const gridTop = Math.floor((top - minY) / gridResolution);
+                const gridBottom = Math.ceil((bottom - minY) / gridResolution);
+
+                // Mark cells as obstacles
+                for (let row = Math.max(0, gridTop); row < Math.min(rows, gridBottom); row++) {
+                    for (let col = Math.max(0, gridLeft); col < Math.min(cols, gridRight); col++) {
+                        grid[row][col] = false;
+                    }
+                }
+            });
+
+            return {
+                grid,
+                rows,
+                cols,
+                minX,
+                minY,
+                gridResolution
+            };
+        }
+
+        /**
+         * Convert canvas coordinates to grid coordinates
+         */
+        canvasToGrid(x, y, gridData) {
+            const col = Math.floor((x - gridData.minX) / gridData.gridResolution);
+            const row = Math.floor((y - gridData.minY) / gridData.gridResolution);
+            return {
+                col: Math.max(0, Math.min(gridData.cols - 1, col)),
+                row: Math.max(0, Math.min(gridData.rows - 1, row))
+            };
+        }
+
+        /**
+         * Convert grid coordinates to canvas coordinates
+         */
+        gridToCanvas(col, row, gridData) {
+            return {
+                x: gridData.minX + col * gridData.gridResolution,
+                y: gridData.minY + row * gridData.gridResolution
+            };
+        }
+
+        /**
+         * A* pathfinding with orthogonal constraints
+         * @param {Object} start - Start position {x, y}
+         * @param {Object} end - End position {x, y}
+         * @param {Object} gridData - Grid data from createRoutingGrid
+         * @param {Object} ports - Optional port information {source: {side}, target: {side}}
+         * @returns {Array} Array of {x, y} points forming the path
+         */
+        findOrthogonalPath(start, end, gridData, ports = null) {
+            if (!gridData || !gridData.grid) {
+                console.error('  Invalid gridData provided to findOrthogonalPath');
+                return [start, end];
+            }
+
+            const startGrid = this.canvasToGrid(start.x, start.y, gridData);
+            const endGrid = this.canvasToGrid(end.x, end.y, gridData);
+
+            console.log(`  A* pathfinding: (${start.x}, ${start.y}) → (${end.x}, ${end.y})`);
+            console.log(`  Grid coords: (${startGrid.row}, ${startGrid.col}) → (${endGrid.row}, ${endGrid.col})`);
+
+            // Check if grid cells exist
+            if (!gridData.grid[startGrid.row] || !gridData.grid[endGrid.row]) {
+                console.error('  Grid row out of bounds!');
+                return [start, end];
+            }
+
+            console.log(`  Start walkable: ${gridData.grid[startGrid.row][startGrid.col]}, End walkable: ${gridData.grid[endGrid.row][endGrid.col]}`);
+
+            // Ensure start and end points are walkable (they might be on node boundaries)
+            // Clear a small area around start and end to ensure connectivity
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const r = startGrid.row + dr;
+                    const c = startGrid.col + dc;
+                    if (r >= 0 && r < gridData.rows && c >= 0 && c < gridData.cols) {
+                        gridData.grid[r][c] = true;
+                    }
+                }
+            }
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    const r = endGrid.row + dr;
+                    const c = endGrid.col + dc;
+                    if (r >= 0 && r < gridData.rows && c >= 0 && c < gridData.cols) {
+                        gridData.grid[r][c] = true;
+                    }
+                }
+            }
+
+            // Priority queue for A* (using simple array, could optimize with heap)
+            const openSet = [];
+            const closedSet = new Set();
+
+            // Cost maps
+            const gScore = new Map(); // Cost from start to node
+            const fScore = new Map(); // Estimated total cost (g + heuristic)
+            const cameFrom = new Map(); // For path reconstruction
+
+            const startKey = `${startGrid.row},${startGrid.col}`;
+            const endKey = `${endGrid.row},${endGrid.col}`;
+
+            // Determine preferred initial direction based on port sides
+            let preferredStartDirection = null;
+            if (ports && ports.source) {
+                const directionMap = {
+                    'top': 'up',
+                    'bottom': 'down',
+                    'left': 'left',
+                    'right': 'right'
+                };
+                preferredStartDirection = directionMap[ports.source.side];
+            }
+
+            gScore.set(startKey, 0);
+            fScore.set(startKey, this.manhattanDistance(startGrid, endGrid));
+
+            openSet.push({...startGrid, key: startKey, direction: preferredStartDirection});
+
+            // 4-directional movement (orthogonal only)
+            const directions = [
+                {dr: -1, dc: 0, name: 'up'},
+                {dr: 1, dc: 0, name: 'down'},
+                {dr: 0, dc: -1, name: 'left'},
+                {dr: 0, dc: 1, name: 'right'}
+            ];
+
+            let iterations = 0;
+            const maxIterations = gridData.rows * gridData.cols; // Prevent infinite loops
+
+            while (openSet.length > 0 && iterations < maxIterations) {
+                iterations++;
+
+                // Get node with lowest fScore
+                openSet.sort((a, b) => fScore.get(a.key) - fScore.get(b.key));
+                const current = openSet.shift();
+
+                // Reached goal?
+                if (current.key === endKey) {
+                    console.log(`  ✓ A* found path! Explored ${closedSet.size} nodes in ${iterations} iterations`);
+                    return this.reconstructPath(cameFrom, current, gridData, start, end);
+                }
+
+                closedSet.add(current.key);
+
+                // Check all neighbors
+                let walkableNeighbors = 0;
+                for (const dir of directions) {
+                    const neighborRow = current.row + dir.dr;
+                    const neighborCol = current.col + dir.dc;
+
+                    // Out of bounds?
+                    if (neighborRow < 0 || neighborRow >= gridData.rows ||
+                        neighborCol < 0 || neighborCol >= gridData.cols) {
+                        continue;
+                    }
+
+                    const neighborKey = `${neighborRow},${neighborCol}`;
+
+                    // Already evaluated?
+                    if (closedSet.has(neighborKey)) {
+                        continue;
+                    }
+
+                    // Is obstacle?
+                    if (!gridData.grid[neighborRow] || !gridData.grid[neighborRow][neighborCol]) {
+                        continue;
+                    }
+
+                    walkableNeighbors++;
+
+                    // Calculate cost
+                    let moveCost = 1;
+
+                    // PHASE 3: Increase bend penalty from 2.0 to 5.0 for stronger straight-line preference
+                    if (current.direction && current.direction !== dir.name) {
+                        moveCost += 5.0;
+                    }
+
+                    // PHASE 3: Add bonus for starting in the preferred port direction
+                    // This encourages edges to leave nodes in the direction of their port
+                    const isFirstMove = (current.key === startKey);
+                    if (isFirstMove && preferredStartDirection && dir.name === preferredStartDirection) {
+                        moveCost -= 1.0; // Bonus for correct initial direction
+                    }
+
+                    // Add small penalty for proximity to grid edges to encourage central routing
+                    const edgeProximity = Math.min(
+                        neighborRow,
+                        neighborCol,
+                        gridData.rows - neighborRow - 1,
+                        gridData.cols - neighborCol - 1
+                    );
+                    if (edgeProximity < 3) {
+                        moveCost += 0.1 * (3 - edgeProximity);
+                    }
+
+                    const tentativeGScore = gScore.get(current.key) + moveCost;
+
+                    // Find if neighbor is already in openSet
+                    const existingNeighbor = openSet.find(n => n.key === neighborKey);
+
+                    if (!existingNeighbor) {
+                        // New node
+                        const neighbor = {
+                            row: neighborRow,
+                            col: neighborCol,
+                            key: neighborKey,
+                            direction: dir.name
+                        };
+
+                        gScore.set(neighborKey, tentativeGScore);
+                        fScore.set(neighborKey, tentativeGScore + this.manhattanDistance(neighbor, endGrid));
+                        cameFrom.set(neighborKey, current);
+                        openSet.push(neighbor);
+                    } else if (tentativeGScore < gScore.get(neighborKey)) {
+                        // Better path to existing node
+                        gScore.set(neighborKey, tentativeGScore);
+                        fScore.set(neighborKey, tentativeGScore + this.manhattanDistance(existingNeighbor, endGrid));
+                        cameFrom.set(neighborKey, current);
+                        existingNeighbor.direction = dir.name;
+                    }
+                }
+
+                // Log if we're stuck (no walkable neighbors)
+                if (iterations <= 5 || walkableNeighbors === 0) {
+                    console.log(`  Iteration ${iterations}: at (${current.row}, ${current.col}), ${walkableNeighbors} walkable neighbors, openSet: ${openSet.length}`);
+                }
+            }
+
+            // No path found - create simple orthogonal fallback
+            console.warn(`A* pathfinding failed after ${iterations} iterations, using orthogonal fallback. Explored ${closedSet.size} nodes, ${openSet.length} remaining in open set`);
+            console.warn(`  Start: (${startGrid.row}, ${startGrid.col}), End: (${endGrid.row}, ${endGrid.col})`);
+
+            // Create a simple orthogonal path (L-shape or Z-shape)
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+
+            // Determine if we should go horizontal-first or vertical-first
+            const dx = Math.abs(end.x - start.x);
+            const dy = Math.abs(end.y - start.y);
+
+            const fallbackPath = [];
+            if (dx > dy) {
+                // Horizontal-first (L-shape)
+                fallbackPath.push(
+                    start,
+                    {x: midX, y: start.y},
+                    {x: midX, y: end.y},
+                    end
+                );
+            } else {
+                // Vertical-first (L-shape)
+                fallbackPath.push(
+                    start,
+                    {x: start.x, y: midY},
+                    {x: end.x, y: midY},
+                    end
+                );
+            }
+
+            // Mark this path as a fallback (failed A*)
+            fallbackPath.isFallback = true;
+            return fallbackPath;
+        }
+
+        /**
+         * Manhattan distance heuristic for A*
+         */
+        manhattanDistance(a, b) {
+            return Math.abs(a.row - b.row) + Math.abs(a.col - b.col);
+        }
+
+        /**
+         * Reconstruct path from A* came-from map
+         */
+        reconstructPath(cameFrom, current, gridData, originalStart, originalEnd) {
+            const path = [];
+            let node = current;
+
+            // Build path in reverse
+            while (node) {
+                const canvasPos = this.gridToCanvas(node.col, node.row, gridData);
+                path.unshift(canvasPos);
+                node = cameFrom.get(node.key);
+            }
+
+            // Replace first and last points with exact start/end positions
+            if (path.length > 0) {
+                path[0] = originalStart;
+                path[path.length - 1] = originalEnd;
+            }
+
+            // Simplify path to remove redundant points
+            return this.simplifyOrthogonalPath(path);
+        }
+
+        routeMultiSegmentEdge(originalEdge, segments, positions, edgesBySource, busMinGap, gridData, portAssignments) {
+            const nodeWidth = 140;
+            const nodeHeight = 60;
+
+            const fromPos = positions[originalEdge.from];
+            const toPos = positions[originalEdge.to];
+
+            if (!fromPos || !toPos) return [];
+
+            // Use A* pathfinding for multi-segment edges to avoid obstacles
+            console.log(`  Multi-segment ${originalEdge.from}→${originalEdge.to}: Using A* pathfinding`);
+
+            // FIXED: Use pre-computed port assignments for multi-segment edges too
+            const fromNode = this.nodes.find(n => n.id === originalEdge.from);
+            const toNode = this.nodes.find(n => n.id === originalEdge.to);
+
+            // CRITICAL: Look up using ORIGINAL direction, not layout direction
+            const originalFrom = originalEdge.originalFrom || originalEdge.from;
+            const originalTo = originalEdge.originalTo || originalEdge.to;
+            const edgeKey = `${originalFrom}-${originalTo}`;
+            const assignment = portAssignments.get(edgeKey);
+
+            let ports;
+            if (assignment) {
+                console.log(`    ✓ Found assignment for ${edgeKey}: ${assignment.sourcePort}→${assignment.targetPort}`);
+                // Use pre-computed port assignment
+                // Assignment is always for ORIGINAL direction (originalFrom → originalTo)
+                // We need to apply it to the correct nodes based on layout
+
+                const isReversed = assignment.isReversed === true;
+
+                if (isReversed) {
+                    // For reversed edges:
+                    // - originalFrom is at layout toPos
+                    // - originalTo is at layout fromPos
+                    // - assignment.sourcePort is for originalFrom
+                    // - assignment.targetPort is for originalTo
+
+                    const originalSourcePorts = this.getPortCandidates(toNode, nodeWidth, nodeHeight);  // originalFrom is at toNode
+                    const originalTargetPorts = this.getPortCandidates(fromNode, nodeWidth, nodeHeight); // originalTo is at fromNode
+
+                    const originalSourcePort = originalSourcePorts[assignment.sourcePort];
+                    const originalTargetPort = originalTargetPorts[assignment.targetPort];
+
+                    ports = {
+                        source: {
+                            x: toPos.x + originalSourcePort.x,      // originalFrom is at toPos
+                            y: toPos.y + originalSourcePort.y,
+                            side: originalSourcePort.side
+                        },
+                        target: {
+                            x: fromPos.x + originalTargetPort.x,    // originalTo is at fromPos
+                            y: fromPos.y + originalTargetPort.y,
+                            side: originalTargetPort.side
+                        }
+                    };
+                } else {
+                    // Normal edge: originalFrom is at fromPos, originalTo is at toPos
+                    const sourcePorts = this.getPortCandidates(fromNode, nodeWidth, nodeHeight);
+                    const targetPorts = this.getPortCandidates(toNode, nodeWidth, nodeHeight);
+
+                    const sourcePort = sourcePorts[assignment.sourcePort];
+                    const targetPort = targetPorts[assignment.targetPort];
+
+                    ports = {
+                        source: {
+                            x: fromPos.x + sourcePort.x,
+                            y: fromPos.y + sourcePort.y,
+                            side: sourcePort.side
+                        },
+                        target: {
+                            x: toPos.x + targetPort.x,
+                            y: toPos.y + targetPort.y,
+                            side: targetPort.side
+                        }
+                    };
+                }
+            } else {
+                // Fallback to old method if no assignment found
+                console.log(`    ⚠️  NO ASSIGNMENT FOUND for ${edgeKey}. Falling back to selectBestPorts.`);
+                const isReversed = originalEdge.reversed || false;
+                ports = this.selectBestPorts(fromNode, toNode, fromPos, toPos, nodeWidth, nodeHeight, isReversed);
+            }
+
+            const startPoint = ports.source;
+            const endPoint = ports.target;
+
+            const edgeType = originalEdge.reversed ? '(back-edge)' : '';
+            console.log(`  Multi-segment port selection: ${originalEdge.from}[${ports.source.side}] → ${originalEdge.to}[${ports.target.side}] ${edgeType}`);
+
+            // Use A* to find path avoiding all obstacles
+            const path = this.findOrthogonalPath(startPoint, endPoint, gridData, ports);
+
+            if (path.isFallback) {
+                console.log(`  ⚠️ A* fallback for multi-segment ${originalEdge.from}→${originalEdge.to}`);
+            } else {
+                console.log(`  ✓ A* routed multi-segment ${originalEdge.from}→${originalEdge.to}: ${path.length} points`);
+            }
+
+            return path;
+        }
+
+        createOrthogonalPath(fromPos, toPos, allPositions) {
+            // Create Manhattan-style routing between two points
+            const points = [];
+            const nodeWidth = 80;
+            const nodeHeight = 40;
+            const margin = 15;
+
+            const startX = fromPos.x;
+            const startY = fromPos.y;
+            const endX = toPos.x;
+            const endY = toPos.y;
+
+            points.push({x: startX, y: startY});
+
+            // Determine routing strategy based on relative positions
+            const dx = endX - startX;
+            const dy = endY - startY;
+
+            if (this.direction === 'TB') {
+                // Top to Bottom layout
+                if (Math.abs(dx) < 5) {
+                    // Nodes are vertically aligned - straight vertical line
+                    points.push({x: endX, y: endY});
+                } else {
+                    // Route with orthogonal segments
+                    const midY = startY + dy / 2;
+
+                    // Vertical segment down from source
+                    points.push({x: startX, y: midY});
+
+                    // Horizontal segment to align with target
+                    points.push({x: endX, y: midY});
+
+                    // Vertical segment to target
+                    points.push({x: endX, y: endY});
+                }
+            } else {
+                // Left to Right layout
+                if (Math.abs(dy) < 5) {
+                    // Nodes are horizontally aligned - straight horizontal line
+                    points.push({x: endX, y: endY});
+                } else {
+                    // Route with orthogonal segments
+                    const midX = startX + dx / 2;
+
+                    // Horizontal segment right from source
+                    points.push({x: midX, y: startY});
+
+                    // Vertical segment to align with target
+                    points.push({x: midX, y: endY});
+
+                    // Horizontal segment to target
+                    points.push({x: endX, y: endY});
+                }
+            }
+
+            return this.simplifyOrthogonalPath(points);
+        }
+
+        convertToOrthogonalPath(straightPoints) {
+            // Convert a series of straight points to orthogonal routing
+            if (straightPoints.length <= 2) {
+                return this.createOrthogonalPath(straightPoints[0], straightPoints[straightPoints.length - 1], {});
+            }
+
+            const points = [];
+
+            for (let i = 0; i < straightPoints.length - 1; i++) {
+                const current = straightPoints[i];
+                const next = straightPoints[i + 1];
+
+                if (i === 0) {
+                    points.push(current);
+                }
+
+                // Add orthogonal segments between consecutive points
+                const dx = next.x - current.x;
+                const dy = next.y - current.y;
+
+                if (Math.abs(dx) > 5 && Math.abs(dy) > 5) {
+                    // Need to route orthogonally
+                    if (this.direction === 'TB') {
+                        const midY = current.y + dy / 2;
+                        points.push({x: current.x, y: midY});
+                        points.push({x: next.x, y: midY});
+                    } else {
+                        const midX = current.x + dx / 2;
+                        points.push({x: midX, y: current.y});
+                        points.push({x: midX, y: next.y});
+                    }
+                }
+
+                points.push(next);
+            }
+
+            return this.simplifyOrthogonalPath(points);
+        }
+
+        simplifyOrthogonalPath(points) {
+            // Remove redundant points in straight lines, but keep corner points
+            if (points.length <= 2) return points;
+
+            const simplified = [points[0]];
+
+            for (let i = 1; i < points.length - 1; i++) {
+                const prev = simplified[simplified.length - 1]; // Use last point in simplified array
+                const curr = points[i];
+                const next = points[i + 1];
+
+                // Check if current point is on a straight line between prev and next
+                const isVerticalLine = Math.abs(prev.x - curr.x) < 0.5 && Math.abs(curr.x - next.x) < 0.5;
+                const isHorizontalLine = Math.abs(prev.y - curr.y) < 0.5 && Math.abs(curr.y - next.y) < 0.5;
+
+                // Keep the point if it's a corner (not collinear)
+                if (!isVerticalLine && !isHorizontalLine) {
+                    simplified.push(curr);
+                }
+            }
+
+            simplified.push(points[points.length - 1]);
+            return simplified;
+        }
+
+        /**
+         * Enforce orthogonal constraints on a path
+         * Ensures each segment is either purely horizontal or purely vertical
+         */
+        enforceOrthogonal(points) {
+            if (points.length <= 1) return points;
+
+            const orthogonal = [points[0]];
+            let insertedCount = 0;
+
+            for (let i = 1; i < points.length; i++) {
+                const prev = orthogonal[orthogonal.length - 1];
+                const curr = points[i];
+
+                const dx = Math.abs(curr.x - prev.x);
+                const dy = Math.abs(curr.y - prev.y);
+
+                // If segment is diagonal (both dx and dy are significant), insert an intermediate point
+                if (dx > 0.5 && dy > 0.5) {
+                    insertedCount++;
+                    console.log(`    Inserting intermediate point for diagonal: (${prev.x},${prev.y}) → (${curr.x},${curr.y}), dx=${dx}, dy=${dy}`);
+
+                    // Decide whether to go horizontal-first or vertical-first
+                    // For TB layout, prefer vertical-first (go down, then across)
+                    if (this.direction === 'TB') {
+                        // Vertical first: go down/up to target Y, then across to target X
+                        const intermediate = {x: prev.x, y: curr.y};
+                        console.log(`    Added intermediate (vertical-first): (${intermediate.x},${intermediate.y})`);
+                        orthogonal.push(intermediate);
+                    } else {
+                        // Horizontal first: go right/left to target X, then up/down to target Y
+                        const intermediate = {x: curr.x, y: prev.y};
+                        console.log(`    Added intermediate (horizontal-first): (${intermediate.x},${intermediate.y})`);
+                        orthogonal.push(intermediate);
+                    }
+                }
+
+                orthogonal.push(curr);
+            }
+
+            console.log(`    enforceOrthogonal: inserted ${insertedCount} intermediate points`);
+            return orthogonal;
         }
     }
 
@@ -593,9 +2524,17 @@
             this.data = data;
             this.layout = layout;
 
-            // Set canvas size
-            const maxX = Math.max(...Object.values(layout.positions).map(p => p.x)) + 100;
-            const maxY = Math.max(...Object.values(layout.positions).map(p => p.y)) + 100;
+            // Set canvas size - account for groups
+            let maxX = Math.max(...Object.values(layout.positions).map(p => p.x)) + 100;
+            let maxY = Math.max(...Object.values(layout.positions).map(p => p.y)) + 100;
+
+            // Also consider group bounds
+            if (layout.groups) {
+                Object.values(layout.groups).forEach(group => {
+                    maxX = Math.max(maxX, group.x + group.width + 50);
+                    maxY = Math.max(maxY, group.y + group.height + 50);
+                });
+            }
 
             this.canvas.width = Math.max(maxX, 1200);
             this.canvas.height = Math.max(maxY, 800);
@@ -607,6 +2546,13 @@
             // Draw grid
             if (this.showGrid) {
                 this.drawGrid();
+            }
+
+            // Draw groups first (as background)
+            if (layout.groups) {
+                Object.values(layout.groups).forEach(group => {
+                    this.drawGroup(group);
+                });
             }
 
             // Draw edges
@@ -623,9 +2569,18 @@
             });
 
             // Update stats
-            document.getElementById('nodeCount').textContent = data.nodes.length;
-            document.getElementById('edgeCount').textContent = data.edges.length;
+            const nodeCount = data.nodes ? data.nodes.length : 0;
+            const edgeCount = data.edges ? data.edges.length : 0;
+            document.getElementById('nodeCount').textContent = nodeCount;
+            document.getElementById('edgeCount').textContent = edgeCount;
             document.getElementById('crossingCount').textContent = layout.crossings;
+
+            // Show debug panel if enabled
+            if (this.showDebug && layout.debugInfo) {
+                this.displayDebugInfo(layout.debugInfo);
+            } else {
+                document.getElementById('debugPanel').style.display = 'none';
+            }
         }
 
         drawGrid() {
@@ -744,7 +2699,7 @@
             if (this.showDebug) {
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 ctx.font = '10px Arial';
-                ctx.fillText(`(${position.gridX}, ${position.gridY})`, position.x, y - 5);
+                ctx.fillText(`${node.id} (${position.gridX}, ${position.gridY})`, position.x, y - 5);
             }
         }
 
@@ -754,10 +2709,42 @@
 
             if (points.length < 2) return;
 
-            // Draw line
-            ctx.strokeStyle = route.reversed ? '#f56565' : '#4a5568';
+            // Debug mode: show edge details
+            if (this.showDebug) {
+                // Draw edge path with points
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                points.forEach((p, idx) => {
+                    ctx.fillRect(p.x - 3, p.y - 3, 6, 6);
+                    ctx.fillStyle = 'black';
+                    ctx.font = '9px Arial';
+                    ctx.fillText(`P${idx}`, p.x + 5, p.y - 5);
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                });
+
+                // Show edge info
+                const midPoint = points[Math.floor(points.length / 2)];
+                const fallbackLabel = route.isFallback ? ' ⚠️FALLBACK' : '';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillRect(midPoint.x + 10, midPoint.y - 25, 140, 20);
+                ctx.fillStyle = route.isFallback ? '#ff8c00' : 'black';
+                ctx.font = '9px Arial';
+                ctx.fillText(`${route.from}→${route.to} (${points.length}pts)${fallbackLabel}`, midPoint.x + 12, midPoint.y - 12);
+            }
+
+            // Draw line - use orange for fallback paths (A* failed)
+            let strokeColor;
+            if (route.isFallback) {
+                strokeColor = '#ff8c00'; // Solid orange for A* fallback
+            } else if (route.reversed) {
+                strokeColor = '#f56565'; // FIXED: Solid red for back-edges (was dashed)
+            } else {
+                strokeColor = '#4a5568'; // Default gray
+            }
+
+            ctx.strokeStyle = strokeColor;
             ctx.lineWidth = 2;
-            ctx.setLineDash(route.reversed ? [5, 5] : []);
+            // FIXED: Remove dashed line for back-edges - all edges are now solid
+            ctx.setLineDash([]);
 
             ctx.beginPath();
             ctx.moveTo(points[0].x, points[0].y);
@@ -767,44 +2754,114 @@
             }
 
             ctx.stroke();
-            ctx.setLineDash([]);
 
-            // Draw arrowhead
-            const last = points[points.length - 1];
-            const prev = points[points.length - 2];
-            const angle = Math.atan2(last.y - prev.y, last.x - prev.x);
+            // FIXED: Draw arrowhead in the correct direction for data flow
+            // For reversed edges, the arrow should point from last to first (opposite of path direction)
+            // because the path was reversed for layout but data flows in the original direction
+            let arrowTip, arrowBase;
+            // if (route.reversed) {
+            //     // Arrow points from end to start (data flow direction)
+            //     arrowTip = points[0];
+            //     arrowBase = points[1];
+            // } else {
+            //     // Arrow points from start to end (normal direction)
+            //     arrowTip = points[points.length - 1];
+            //     arrowBase = points[points.length - 2];
+            // }
+            arrowTip = points[points.length - 1];
+            arrowBase = points[points.length - 2];
+
+            const angle = Math.atan2(arrowTip.y - arrowBase.y, arrowTip.x - arrowBase.x);
 
             const arrowLength = 10;
             const arrowAngle = Math.PI / 6;
 
             ctx.fillStyle = ctx.strokeStyle;
             ctx.beginPath();
-            ctx.moveTo(last.x, last.y);
+            ctx.moveTo(arrowTip.x, arrowTip.y);
             ctx.lineTo(
-                last.x - arrowLength * Math.cos(angle - arrowAngle),
-                last.y - arrowLength * Math.sin(angle - arrowAngle)
+                arrowTip.x - arrowLength * Math.cos(angle - arrowAngle),
+                arrowTip.y - arrowLength * Math.sin(angle - arrowAngle)
             );
             ctx.lineTo(
-                last.x - arrowLength * Math.cos(angle + arrowAngle),
-                last.y - arrowLength * Math.sin(angle + arrowAngle)
+                arrowTip.x - arrowLength * Math.cos(angle + arrowAngle),
+                arrowTip.y - arrowLength * Math.sin(angle + arrowAngle)
             );
             ctx.closePath();
             ctx.fill();
 
             // Draw label if exists
             if (route.label) {
-                const midX = (points[0].x + last.x) / 2;
-                const midY = (points[0].y + last.y) / 2;
+                // Find the best position for the label (middle segment of the path)
+                let labelX, labelY;
+
+                if (points.length === 2) {
+                    // Simple case: midpoint of the line
+                    labelX = (points[0].x + points[1].x) / 2;
+                    labelY = (points[0].y + points[1].y) / 2;
+                } else {
+                    // For orthogonal paths, place label on the middle horizontal or vertical segment
+                    const midIdx = Math.floor(points.length / 2);
+                    const midPoint = points[midIdx];
+                    const prevPoint = points[midIdx - 1];
+
+                    labelX = (midPoint.x + prevPoint.x) / 2;
+                    labelY = (midPoint.y + prevPoint.y) / 2;
+                }
+
+                // Measure text to create proper background
+                ctx.font = '11px Arial';
+                const textMetrics = ctx.measureText(route.label);
+                const textWidth = textMetrics.width;
+                const padding = 4;
 
                 ctx.fillStyle = 'white';
-                ctx.fillRect(midX - 20, midY - 10, 40, 20);
+                ctx.fillRect(
+                    labelX - textWidth / 2 - padding,
+                    labelY - 8,
+                    textWidth + padding * 2,
+                    16
+                );
 
                 ctx.fillStyle = '#4a5568';
-                ctx.font = '11px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(route.label, midX, midY);
+                ctx.fillText(route.label, labelX, labelY);
             }
+        }
+
+        drawGroup(group) {
+            const ctx = this.ctx;
+            const x = group.x;
+            const y = group.y;
+            const width = group.width;
+            const height = group.height;
+
+            // Draw group background with subtle fill
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.05)';
+            this.drawRoundedRect(x, y, width, height, 12);
+            ctx.fill();
+
+            // Draw group border
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 4]);
+            this.drawRoundedRect(x, y, width, height, 12);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw group label
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText(group.label, x + 10, y + 10);
+
+            // Draw subtle shadow for depth
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.lineWidth = 1;
+            this.drawRoundedRect(x + 2, y + 2, width, height, 12);
+            ctx.stroke();
         }
 
         drawRoundedRect(x, y, width, height, radius) {
@@ -821,135 +2878,195 @@
             ctx.quadraticCurveTo(x, y, x + radius, y);
             ctx.closePath();
         }
+
+        displayDebugInfo(debugInfo) {
+            const panel = document.getElementById('debugPanel');
+            const content = document.getElementById('debugContent');
+
+            let html = '';
+
+            // Section: Per-Edge Scoring Details (VERBOSE)
+            html += '<h4 style="margin: 0 0 15px 0; color: #2d3748; border-bottom: 2px solid #cbd5e0; padding-bottom: 8px;">📊 Per-Edge Scoring Details (Ordered by Routing Distance)</h4>';
+
+            if (debugInfo.edgeScoring && debugInfo.edgeScoring.length > 0) {
+                // Sort edges by routing order (distance)
+                const sortedEdges = [...debugInfo.edgeScoring].sort((a, b) => {
+                    const orderA = debugInfo.routingOrder?.get(a.edgeId) || {index: Infinity, distance: Infinity};
+                    const orderB = debugInfo.routingOrder?.get(b.edgeId) || {index: Infinity, distance: Infinity};
+                    return orderA.index - orderB.index;
+                });
+
+                sortedEdges.forEach((edge, displayIdx) => {
+                    const routingInfo = debugInfo.routingOrder?.get(edge.edgeId);
+                    const routingIndex = routingInfo?.index ?? '?';
+                    const distance = routingInfo?.distance ?? '?';
+
+                    const violationColor = edge.hasViolation ? '#f56565' : '#48bb78';
+                    const violationIcon = edge.hasViolation ? '⚠️' : '✓';
+
+                    html += `<div style="margin: 15px 0; padding: 12px; background: white; border-left: 4px solid ${violationColor}; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">`;
+
+                    // Header with edge ID and status
+                    html += `<div style="margin-bottom: 10px;">`;
+                    html += `<strong style="color: #2d3748; font-size: 13px;">${violationIcon} Route #${routingIndex + 1}: ${edge.edgeId}</strong>`;
+                    html += ` <span style="background: #e6f3ff; color: #2c5aa0; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">Distance: ${typeof distance === 'number' ? distance.toFixed(0) : distance}px</span>`;
+                    if (edge.isBackEdge) {
+                        html += ` <span style="background: #fed7d7; color: #c53030; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">BACK-EDGE</span>`;
+                    }
+                    html += `</div>`;
+
+                    // Direction info
+                    html += `<div style="margin-left: 10px; font-size: 11px; color: #4a5568; margin-bottom: 8px;">`;
+                    html += `<div><strong>Original Direction:</strong> ${edge.originalFrom} → ${edge.originalTo}</div>`;
+                    if (edge.layoutFrom !== edge.originalFrom || edge.layoutTo !== edge.originalTo) {
+                        html += `<div><strong>Layout Direction:</strong> ${edge.layoutFrom} → ${edge.layoutTo}</div>`;
+                    }
+                    html += `</div>`;
+
+                    // Port selection
+                    html += `<div style="margin-left: 10px; font-size: 11px; color: #2d3748; margin-bottom: 10px; background: #f0f4ff; padding: 8px; border-radius: 3px;">`;
+                    html += `<strong>Selected Ports:</strong> <span style="color: #667eea; font-weight: bold;">${edge.selectedPorts.source}</span> → <span style="color: #667eea; font-weight: bold;">${edge.selectedPorts.target}</span>`;
+                    html += `<div style="margin-top: 4px;"><strong>Final Score:</strong> <span style="color: #667eea; font-weight: bold; font-size: 12px;">${edge.selectedScore.toFixed(3)}</span></div>`;
+                    html += `</div>`;
+
+                    // Detailed scoring breakdown for SELECTED ports
+                    if (edge.scoringBreakdown) {
+                        html += `<div style="margin-left: 10px; margin-top: 8px; font-size: 10px; color: #4a5568; background: #f7fafc; padding: 10px; border-radius: 3px; border: 1px solid #e2e8f0;">`;
+                        html += `<strong style="display: block; margin-bottom: 8px; color: #2d3748;">📈 Selected Port Scoring Breakdown:</strong>`;
+
+                        Object.entries(edge.scoringBreakdown).forEach(([criterion, score]) => {
+                            const scoreColor = score > 0 ? '#48bb78' : score < 0 ? '#f56565' : '#cbd5e0';
+                            const scoreSign = score > 0 ? '+' : '';
+                            const scoreBar = Math.abs(score) > 0 ? '█'.repeat(Math.min(Math.ceil(Math.abs(score) * 2), 20)) : '·';
+
+                            html += `<div style="margin: 6px 0; display: flex; align-items: center; gap: 8px;">`;
+                            html += `<span style="min-width: 140px; color: #4a5568;"><strong>${criterion}:</strong></span>`;
+                            html += `<span style="color: ${scoreColor}; font-weight: bold; min-width: 50px; text-align: right;">${scoreSign}${score.toFixed(3)}</span>`;
+                            html += `<span style="color: ${scoreColor}; font-size: 9px; letter-spacing: 1px;">${scoreBar}</span>`;
+                            html += `</div>`;
+                        });
+
+                        html += `</div>`;
+                    }
+
+                    // All port pair scores (4 source × 4 destination = 16 combinations)
+                    if (edge.allPortScores && edge.allPortScores.length > 0) {
+                        html += `<div style="margin-left: 10px; margin-top: 10px; font-size: 9px; color: #4a5568; background: #fafbfc; padding: 10px; border-radius: 3px; border: 1px solid #e2e8f0;">`;
+                        html += `<strong style="display: block; margin-bottom: 8px; color: #2d3748;">🔍 All Port Combinations (16 Total):</strong>`;
+
+                        // Create a table-like display for all port scores
+                        html += `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-family: monospace;">`;
+
+                        edge.allPortScores.forEach((portPair, portIdx) => {
+                            const isSelected = portPair.source === edge.selectedPorts.source &&
+                                             portPair.target === edge.selectedPorts.target;
+                            const bgColor = isSelected ? '#e6fffa' : '#ffffff';
+                            const borderColor = isSelected ? '#38b6a8' : '#e2e8f0';
+                            const uniqueId = `port-combo-${portPair}-${portIdx}`;
+
+                            // Handle -Infinity scores (direction separation violations)
+                            const isViolation = !isFinite(portPair.score) || portPair.score === -Infinity;
+                            let scoreColor, scoreDisplay;
+
+                            if (isViolation) {
+                                scoreColor = '#cbd5e0';
+                                scoreDisplay = '✗ INVALID';
+                            } else if (typeof portPair.score === 'number') {
+                                scoreColor = portPair.score > 0 ? '#48bb78' : portPair.score < 0 ? '#f56565' : '#cbd5e0';
+                                scoreDisplay = `${portPair.score > 0 ? '+' : ''}${portPair.score.toFixed(1)}`;
+                            } else {
+                                scoreColor = '#cbd5e0';
+                                scoreDisplay = '? UNKNOWN';
+                            }
+
+                            html += `<div id="${uniqueId}" style="padding: 6px; background: ${bgColor}; border: 2px solid ${borderColor}; border-radius: 3px; text-align: center; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.15)'" onmouseout="this.style.boxShadow='none'" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">`;
+                            html += `<div style="font-weight: bold; color: #2d3748; margin-bottom: 2px;">${portPair.source}→${portPair.target}</div>`;
+                            html += `<div style="color: ${scoreColor}; font-weight: bold; font-size: 10px;">${scoreDisplay}</div>`;
+                            if (isSelected) {
+                                html += `<div style="color: #38b6a8; font-size: 8px; margin-top: 2px;">✓ SELECTED</div>`;
+                            }
+                            html += `</div>`;
+
+                            // Breakdown details (hidden by default)
+                            html += `<div style="display: none; margin-top: 6px; padding: 8px; background: #f0f4f8; border: 1px solid #cbd5e0; border-radius: 3px; font-size: 9px; color: #4a5568;">`;
+
+                            if (isViolation) {
+                                html += `<div style="color: #f56565; font-weight: bold; margin-bottom: 4px;">❌ Direction Separation Violation</div>`;
+                                html += `<div style="color: #718096; font-size: 8px;">This port combination violates the constraint that incoming and outgoing edges must use different port sides.</div>`;
+                            } else if (Object.keys(portPair.breakdown).length > 0) {
+                                html += `<div style="font-weight: bold; margin-bottom: 6px; color: #2d3748;">📊 Scoring Breakdown:</div>`;
+                                Object.entries(portPair.breakdown).forEach(([criterion, score]) => {
+                                    const scoreSign = score > 0 ? '+' : '';
+                                    const scoreBarColor = score > 0 ? '#48bb78' : score < 0 ? '#f56565' : '#cbd5e0';
+                                    const scoreBar = Math.abs(score) > 0 ? '█'.repeat(Math.min(Math.ceil(Math.abs(score) * 2), 20)) : '·';
+                                    html += `<div style="margin: 4px 0; display: flex; align-items: center; gap: 6px;">`;
+                                    html += `<span style="min-width: 120px; color: #4a5568;"><strong>${criterion}:</strong></span>`;
+                                    html += `<span style="color: ${scoreBarColor}; font-weight: bold; min-width: 45px; text-align: right;">${scoreSign}${score.toFixed(2)}</span>`;
+                                    html += `<span style="color: ${scoreBarColor}; font-size: 8px; letter-spacing: 0.5px;">${scoreBar}</span>`;
+                                    html += `</div>`;
+                                });
+                                html += `<div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #cbd5e0; font-weight: bold; color: #2d3748;">Total: ${portPair.score > 0 ? '+' : ''}${portPair.score.toFixed(2)}</div>`;
+                            } else {
+                                html += `<div style="color: #718096;">No breakdown available</div>`;
+                            }
+                            html += `</div>`;
+                        });
+
+                        html += `</div>`;
+                        html += `</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+            } else {
+                html += '<div style="color: #a0aec0; font-style: italic; padding: 10px;">No edge scoring information available</div>';
+            }
+
+            content.innerHTML = html;
+            panel.style.display = 'block';
+        }
     }
 
     // ====================================
     // Example Flowchart Data
     // ====================================
 
-    const examples = {
-        complex: {
-            nodes: [
-                {id: 'start', type: 'start', label: 'Start'},
-                {id: 'input', type: 'data', label: 'Read Input\nData'},
-                {id: 'validate', type: 'process', label: 'Validate\nData'},
-                {id: 'check_valid', type: 'decision', label: 'Valid?'},
-                {id: 'transform', type: 'process', label: 'Transform\nData'},
-                {id: 'parallel1', type: 'subprocess', label: 'Process\nStream A'},
-                {id: 'parallel2', type: 'subprocess', label: 'Process\nStream B'},
-                {id: 'parallel3', type: 'subprocess', label: 'Process\nStream C'},
-                {id: 'merge', type: 'process', label: 'Merge\nResults'},
-                {id: 'quality_check', type: 'decision', label: 'Quality\nOK?'},
-                {id: 'store', type: 'data', label: 'Store in\nDatabase'},
-                {id: 'notify', type: 'process', label: 'Send\nNotification'},
-                {id: 'error_handler', type: 'error', label: 'Handle\nError'},
-                {id: 'retry_check', type: 'decision', label: 'Retry?'},
-                {id: 'log_error', type: 'error', label: 'Log Error'},
-                {id: 'cleanup', type: 'process', label: 'Cleanup\nResources'},
-                {id: 'end', type: 'end', label: 'End'}
-            ],
-            edges: [
-                {from: 'start', to: 'input'},
-                {from: 'input', to: 'validate'},
-                {from: 'validate', to: 'check_valid'},
-                {from: 'check_valid', to: 'transform', label: 'Yes'},
-                {from: 'check_valid', to: 'error_handler', label: 'No'},
-                {from: 'transform', to: 'parallel1'},
-                {from: 'transform', to: 'parallel2'},
-                {from: 'transform', to: 'parallel3'},
-                {from: 'parallel1', to: 'merge'},
-                {from: 'parallel2', to: 'merge'},
-                {from: 'parallel3', to: 'merge'},
-                {from: 'merge', to: 'quality_check'},
-                {from: 'quality_check', to: 'store', label: 'Pass'},
-                {from: 'quality_check', to: 'error_handler', label: 'Fail'},
-                {from: 'store', to: 'notify'},
-                {from: 'notify', to: 'cleanup'},
-                {from: 'error_handler', to: 'retry_check'},
-                {from: 'retry_check', to: 'input', label: 'Yes'},
-                {from: 'retry_check', to: 'log_error', label: 'No'},
-                {from: 'log_error', to: 'cleanup'},
-                {from: 'cleanup', to: 'end'}
-            ]
-        },
+    let examples = {}; // Will be loaded from examples.json
 
-        decision: {
-            nodes: [
-                {id: 'start', type: 'start', label: 'Request\nReceived'},
-                {id: 'auth', type: 'decision', label: 'Authenticated?'},
-                {id: 'check_role', type: 'decision', label: 'Check\nRole'},
-                {id: 'admin_panel', type: 'process', label: 'Admin\nDashboard'},
-                {id: 'user_panel', type: 'process', label: 'User\nDashboard'},
-                {id: 'guest_panel', type: 'process', label: 'Guest\nView'},
-                {id: 'login', type: 'process', label: 'Show\nLogin'},
-                {id: 'verify', type: 'process', label: 'Verify\nCredentials'},
-                {id: 'check_2fa', type: 'decision', label: '2FA\nEnabled?'},
-                {id: 'send_2fa', type: 'process', label: 'Send 2FA\nCode'},
-                {id: 'verify_2fa', type: 'process', label: 'Verify\n2FA'},
-                {id: 'access_granted', type: 'process', label: 'Grant\nAccess'},
-                {id: 'access_denied', type: 'error', label: 'Access\nDenied'},
-                {id: 'end', type: 'end', label: 'Complete'}
-            ],
-            edges: [
-                {from: 'start', to: 'auth'},
-                {from: 'auth', to: 'check_role', label: 'Yes'},
-                {from: 'auth', to: 'login', label: 'No'},
-                {from: 'check_role', to: 'admin_panel', label: 'Admin'},
-                {from: 'check_role', to: 'user_panel', label: 'User'},
-                {from: 'check_role', to: 'guest_panel', label: 'Guest'},
-                {from: 'login', to: 'verify'},
-                {from: 'verify', to: 'check_2fa'},
-                {from: 'check_2fa', to: 'send_2fa', label: 'Yes'},
-                {from: 'check_2fa', to: 'access_granted', label: 'No'},
-                {from: 'send_2fa', to: 'verify_2fa'},
-                {from: 'verify_2fa', to: 'access_granted'},
-                {from: 'access_granted', to: 'check_role'},
-                {from: 'admin_panel', to: 'end'},
-                {from: 'user_panel', to: 'end'},
-                {from: 'guest_panel', to: 'end'},
-                {from: 'verify', to: 'access_denied'},
-                {from: 'access_denied', to: 'end'}
-            ]
-        },
+    // Load examples from external JSON file
+    async function loadExamples() {
+        try {
+            // Try to load from the same directory as this HTML file
+            const response = await fetch('./examples.json');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            examples = await response.json();
+            console.log('Examples loaded successfully:', Object.keys(examples));
+            return true;
+        } catch (error) {
+            console.error('Error loading examples:', error);
 
-        parallel: {
-            nodes: [
-                {id: 'start', type: 'start', label: 'Start Batch'},
-                {id: 'split', type: 'process', label: 'Split Tasks'},
-                {id: 'task1', type: 'subprocess', label: 'Task 1\nAPI Call'},
-                {id: 'task2', type: 'subprocess', label: 'Task 2\nDatabase'},
-                {id: 'task3', type: 'subprocess', label: 'Task 3\nFile Process'},
-                {id: 'task4', type: 'subprocess', label: 'Task 4\nCalculation'},
-                {id: 'sync1', type: 'process', label: 'Sync Point'},
-                {id: 'aggregate', type: 'process', label: 'Aggregate\nResults'},
-                {id: 'validate', type: 'decision', label: 'All Success?'},
-                {id: 'report', type: 'data', label: 'Generate\nReport'},
-                {id: 'rollback', type: 'error', label: 'Rollback\nChanges'},
-                {id: 'notify_success', type: 'process', label: 'Success\nNotification'},
-                {id: 'notify_failure', type: 'error', label: 'Failure\nNotification'},
-                {id: 'end', type: 'end', label: 'End'}
-            ],
-            edges: [
-                {from: 'start', to: 'split'},
-                {from: 'split', to: 'task1'},
-                {from: 'split', to: 'task2'},
-                {from: 'split', to: 'task3'},
-                {from: 'split', to: 'task4'},
-                {from: 'task1', to: 'sync1'},
-                {from: 'task2', to: 'sync1'},
-                {from: 'task3', to: 'sync1'},
-                {from: 'task4', to: 'sync1'},
-                {from: 'sync1', to: 'aggregate'},
-                {from: 'aggregate', to: 'validate'},
-                {from: 'validate', to: 'report', label: 'Yes'},
-                {from: 'validate', to: 'rollback', label: 'No'},
-                {from: 'report', to: 'notify_success'},
-                {from: 'rollback', to: 'notify_failure'},
-                {from: 'notify_success', to: 'end'},
-                {from: 'notify_failure', to: 'end'}
-            ]
+            // Show a more helpful error message
+            const errorMsg = `Failed to load examples.json
+
+Error: ${error.message}
+
+This might be due to browser security restrictions when opening HTML files directly.
+Please try one of these solutions:
+
+1. Use a local web server (recommended):
+   - Run: python3 -m http.server 8000
+   - Then open: http://localhost:8000/grid/grid.html
+
+2. Or use the examples embedded in the page (fallback mode will load)`;
+
+            alert(errorMsg);
+            return false;
         }
-    };
+    }
+
+
 
     // ====================================
     // Application Controller
@@ -963,13 +3080,57 @@
         direction: 'TB'
     });
 
-    let currentExample = 'complex';
+    let currentExample = 'Cycle';
 
     function loadExample(name) {
         currentExample = name;
         const data = examples[name];
+
+        if (!data) {
+            console.error('Example not found:', name);
+            return;
+        }
+
+        // Update the JSON input textarea with the example data
+        document.getElementById('jsonInput').value = JSON.stringify(data, null, 2);
+
         const layout = layoutEngine.computeLayout(data.nodes, data.edges);
         renderer.render(data, layout);
+    }
+
+    function loadSelectedExample() {
+        const select = document.getElementById('exampleSelect');
+        loadExample(select.value);
+    }
+
+    function renderCustomJSON() {
+        const jsonInput = document.getElementById('jsonInput').value.trim();
+
+        if (!jsonInput) {
+            alert('Please enter JSON data');
+            return;
+        }
+
+        try {
+            const data = JSON.parse(jsonInput);
+
+            // Validate the data structure
+            if (!data.nodes || !Array.isArray(data.nodes)) {
+                throw new Error('JSON must contain a "nodes" array');
+            }
+            if (!data.edges || !Array.isArray(data.edges)) {
+                throw new Error('JSON must contain an "edges" array');
+            }
+
+            // Render the custom data
+            const layout = layoutEngine.computeLayout(data.nodes, data.edges);
+            renderer.render(data, layout);
+
+            currentExample = 'custom';
+        } catch (error) {
+            alert('Invalid JSON: ' + error.message);
+            console.error('JSON parsing error:', error);
+        }
     }
 
     function toggleGrid() {
@@ -992,8 +3153,33 @@
         loadExample(currentExample);
     }
 
-    // Initialize with complex example
-    loadExample('complex');
+    // Initialize: Load examples then render
+    async function initialize() {
+        const loaded = await loadExamples();
+
+        // If loading failed and examples is still empty, provide a fallback
+        if (!loaded && Object.keys(examples).length === 0) {
+            console.warn('Using fallback: Please use a web server to load all examples');
+            // Provide a minimal fallback example
+            examples = {
+                'Cycle': {
+                    nodes: [
+                        {id: 'start', type: 'start', label: 'Start'},
+                        {id: 'process', type: 'process', label: 'Process'},
+                        {id: 'end', type: 'end', label: 'End'}
+                    ],
+                    edges: [
+                        {from: 'start', to: 'process'},
+                        {from: 'process', to: 'end'}
+                    ]
+                }
+            };
+        }
+
+        loadExample('What');
+    }
+
+    initialize();
 
     // Add pan and zoom functionality
     let isPanning = false;

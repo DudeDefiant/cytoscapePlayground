@@ -1,0 +1,2280 @@
+{
+  "Cycle": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Birth",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Childhood",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Adolescence",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Adulthood",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Old Age",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "A"
+      }
+    ]
+  },
+  "Flowchart": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Is object inside a decorator?",
+        "type": "decision"
+      },
+      {
+        "id": "B",
+        "label": "Translate/Edit object",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Is decorator translated/edited?",
+        "type": "decision"
+      },
+      {
+        "id": "D",
+        "label": "Translate object",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "End",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "A",
+        "to": "C",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "yes"
+      },
+      {
+        "from": "C",
+        "to": "E",
+        "label": "no"
+      }
+    ]
+  },
+  "Freelance": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Freelance Trainer",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Senior Executive - Talent Transformation",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Deputy Manager Learning & Development",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Team Lead Learning & Development",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Manager Learning & Development",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Present",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Dec'16 - Feb'18",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "July'18 - Mar'22",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "June'22 - May'23",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "May'23 - Present",
+        "type": "process"
+      },
+      {
+        "id": "K",
+        "label": "July'12 - Nov'16",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "B",
+        "to": "G"
+      },
+      {
+        "from": "C",
+        "to": "H"
+      },
+      {
+        "from": "D",
+        "to": "I"
+      },
+      {
+        "from": "E",
+        "to": "J"
+      },
+      {
+        "from": "A",
+        "to": "K"
+      }
+    ]
+  },
+  "Manager": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Manager L&D",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Reliance Jio",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Cognizant",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "HDFC Life",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "MAX Fashions",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Freelance Trainer",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "G",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "A",
+        "to": "C"
+      },
+      {
+        "from": "A",
+        "to": "D"
+      },
+      {
+        "from": "A",
+        "to": "E"
+      },
+      {
+        "from": "A",
+        "to": "F"
+      },
+      {
+        "from": "B",
+        "to": "G",
+        "label": "May'23 - Present"
+      },
+      {
+        "from": "C",
+        "to": "G",
+        "label": "June'22 - May'23"
+      },
+      {
+        "from": "D",
+        "to": "G",
+        "label": "July'18 - Mar'22"
+      },
+      {
+        "from": "E",
+        "to": "G",
+        "label": "Dec'16 - Feb'18"
+      },
+      {
+        "from": "F",
+        "to": "G",
+        "label": "July'12 - Nov'16"
+      }
+    ]
+  },
+  "Defining": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Defining product vision",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Define value proposition",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Define Success criteria",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Product research",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Conduct user research",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "User analysis",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "User analysis",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Ideation",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Plan structure of product",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "Generate Ideas",
+        "type": "process"
+      },
+      {
+        "id": "K",
+        "label": "Validate Ideas",
+        "type": "process"
+      },
+      {
+        "id": "L",
+        "label": "Design",
+        "type": "process"
+      },
+      {
+        "id": "M",
+        "label": "Design Handoff",
+        "type": "process"
+      },
+      {
+        "id": "N",
+        "label": "Testing and Validation",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "1. Working backwards"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "2. Schedule project kickoff meeting"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F",
+        "label": "1. Users interviews"
+      },
+      {
+        "from": "E",
+        "to": "F",
+        "label": "2. Online Surveys"
+      },
+      {
+        "from": "E",
+        "to": "F",
+        "label": "3. Contextual Inquiry"
+      },
+      {
+        "from": "E",
+        "to": "G",
+        "label": "4. Conduct Market Research"
+      },
+      {
+        "from": "G",
+        "to": "H",
+        "label": "1. Modelling users and their environments"
+      },
+      {
+        "from": "H",
+        "to": "I",
+        "label": "1. Generate Ideas"
+      },
+      {
+        "from": "I",
+        "to": "J",
+        "label": "1. Information Architecture"
+      },
+      {
+        "from": "J",
+        "to": "K",
+        "label": "1. User Journey Mapping"
+      },
+      {
+        "from": "J",
+        "to": "K",
+        "label": "2. Scenarios and storyboards"
+      },
+      {
+        "from": "J",
+        "to": "K",
+        "label": "3. User Stories"
+      },
+      {
+        "from": "J",
+        "to": "K",
+        "label": "4. Job stories"
+      },
+      {
+        "from": "K",
+        "to": "L",
+        "label": "1. Design Sprint"
+      },
+      {
+        "from": "L",
+        "to": "M",
+        "label": "1. Prototyping"
+      },
+      {
+        "from": "M",
+        "to": "N",
+        "label": "1. Paper prototyping"
+      }
+    ]
+  },
+  "Evaluate": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Evaluate Speed",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Across Pages and Devices",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Consider Factors",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Image Optimization",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Server Responsiveness",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "C",
+        "to": "E"
+      }
+    ]
+  },
+  "captures": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "captures",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Photoshoots & Videoshoots",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Events, Weddings, Travel, Nature",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Tagline: Lovin' every pixel!",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Tools: Physical Camera",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Services: Photoshoot & Videoshoot",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Wedding, Prewedding, Special Life Events",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Short Films, Feature Films",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Product, Architecture",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "Short Videos, Youtube Videos, Interviews, Podcasts",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "A",
+        "to": "D"
+      },
+      {
+        "from": "A",
+        "to": "E"
+      },
+      {
+        "from": "A",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "G",
+        "label": "Events"
+      },
+      {
+        "from": "F",
+        "to": "H",
+        "label": "Films"
+      },
+      {
+        "from": "F",
+        "to": "I",
+        "label": "Advertisements"
+      },
+      {
+        "from": "F",
+        "to": "J",
+        "label": "Social Media"
+      }
+    ]
+  },
+  "Logo": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Logo Design",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Create Logo Concepts",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Memorable, Versatile, Resonate",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Color Palette",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Define Color Scheme",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Reflect Brand Personality",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Evokes Emotions",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Typography",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Select Fonts",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "Complement Logo",
+        "type": "process"
+      },
+      {
+        "id": "K",
+        "label": "Enhance Communication",
+        "type": "process"
+      },
+      {
+        "id": "L",
+        "label": "Brand Assets",
+        "type": "process"
+      },
+      {
+        "id": "M",
+        "label": "Design Elements",
+        "type": "process"
+      },
+      {
+        "id": "N",
+        "label": "Patterns, Icons, Imagery",
+        "type": "process"
+      },
+      {
+        "id": "O",
+        "label": "Build Brand Ecosystem",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "A",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "G"
+      },
+      {
+        "from": "A",
+        "to": "H"
+      },
+      {
+        "from": "H",
+        "to": "I"
+      },
+      {
+        "from": "I",
+        "to": "J"
+      },
+      {
+        "from": "J",
+        "to": "K"
+      },
+      {
+        "from": "A",
+        "to": "L"
+      },
+      {
+        "from": "L",
+        "to": "M"
+      },
+      {
+        "from": "M",
+        "to": "N"
+      },
+      {
+        "from": "N",
+        "to": "O"
+      }
+    ]
+  },
+  "Under": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Under Performer?",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Help to Perform",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Already Performer",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "No Help Needed",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "A",
+        "to": "C",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "B",
+        "to": "D"
+      }
+    ]
+  },
+  "What": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "What is PIP?",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Package Manager",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Python Packages",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Modules",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "B",
+        "to": "D"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      }
+    ]
+  },
+  "Is": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Is Machine Language?",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Foundation of AI",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Teach Computer",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Predictions or Conclusions",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "From Data",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "A",
+        "to": "C",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      }
+    ]
+  },
+  "Thank": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Thank you",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Part of journey",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Project not come far",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Valuable support",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Enterprise Sales",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "HR",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Enterprise Academy",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "D",
+        "to": "F"
+      },
+      {
+        "from": "D",
+        "to": "G"
+      }
+    ]
+  },
+  "Setup": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Setup",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Set Pin Mode",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Loop",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Turn LED ON",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Pause for a second",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Turn LED OFF",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Pause for a second",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "G"
+      },
+      {
+        "from": "G",
+        "to": "C"
+      }
+    ]
+  },
+  "Feedback": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Feedback mechanism",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Regular meeting sessions",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Interactions",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Provide constructive feedback",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "A",
+        "to": "C"
+      },
+      {
+        "from": "B",
+        "to": "D"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      }
+    ]
+  },
+  "Training": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Training Delivery",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "ILT",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "VILT",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Flipped Classroom",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "OJT",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "A",
+        "to": "C"
+      },
+      {
+        "from": "A",
+        "to": "D"
+      },
+      {
+        "from": "A",
+        "to": "E"
+      }
+    ]
+  },
+  "Jupiter": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Is Jupiter Gas?",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Planet is Gas",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Gravity High?",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Atmosphere Held?",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Earth Gravity",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "A",
+        "to": "C",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "no"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "yes"
+      },
+      {
+        "from": "D",
+        "to": "B",
+        "label": "no"
+      }
+    ]
+  },
+  "Earth": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Is Jupiter Gas?",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Planet is Gas",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Gravity on Jupiter",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Gravity on Earth",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Air held on Earth",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "No Air on Earth",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "A",
+        "to": "C",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "B",
+        "label": "high"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "low"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "high"
+      },
+      {
+        "from": "D",
+        "to": "F",
+        "label": "low"
+      }
+    ]
+  },
+  "Hanger": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Head Text",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Level 1 Main Child",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Level 1 Second Child",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Level 2 Main Child",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Level 2 Second Child",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "A",
+        "to": "C"
+      },
+      {
+        "from": "B",
+        "to": "D"
+      },
+      {
+        "from": "B",
+        "to": "E"
+      }
+    ]
+  },
+  "Simple": {
+    "nodes": [
+      {
+        "id": "AB",
+        "label": "Source AB",
+        "type": "process"
+      },
+      {
+        "id": "A",
+        "label": "Target A",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Target B",
+        "type": "process"
+      },
+      {
+        "id": "BC",
+        "label": "Source BC",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Target C",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "AB",
+        "to": "A"
+      },
+      {
+        "from": "AB",
+        "to": "B"
+      },
+      {
+        "from": "BC",
+        "to": "B"
+      },
+      {
+        "from": "BC",
+        "to": "C"
+      }
+    ]
+  },
+  "Change-tyre": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Is there a spare tyre?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Remove flat tyre",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Call for help",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Put on spare tyre",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Secure tyre",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Lower car",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Check tyre pressure",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Finish",
+        "type": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "Yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "No"
+      },
+      {
+        "from": "C",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "G"
+      },
+      {
+        "from": "G",
+        "to": "H"
+      },
+      {
+        "from": "H",
+        "to": "I"
+      },
+      {
+        "from": "D",
+        "to": "I"
+      }
+    ]
+  },
+  "decision-flip": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Decision",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Process",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "End",
+        "type": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "Yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "No"
+      },
+      {
+        "from": "A",
+        "to": "C"
+      }
+    ]
+  },
+  "complex-1": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start Game",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Correct Guess?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Continue Game",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Attempts Left?",
+        "type": "decision"
+      },
+      {
+        "id": "E",
+        "label": "Lose",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Word Complete? >",
+        "type": "decision"
+      },
+      {
+        "id": "G",
+        "label": "Win",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "Yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "No"
+      },
+      {
+        "from": "D",
+        "to": "C",
+        "label": "Yes"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "No"
+      },
+      {
+        "from": "C",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "G",
+        "label": "Yes"
+      },
+      {
+        "from": "F",
+        "to": "B",
+        "label": "No"
+      }
+    ]
+  },
+  "complex-2": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Lead Form Created",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Contact Number Provided?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Send WhatsApp Message",
+        "type": "end"
+      },
+      {
+        "id": "D",
+        "label": "Email Address Provided?",
+        "type": "decision"
+      },
+      {
+        "id": "E",
+        "label": "Send Intro Email",
+        "type": "end"
+      },
+      {
+        "id": "F",
+        "label": "No Action",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Response Received?",
+        "type": "decision"
+      },
+      {
+        "id": "H",
+        "label": "Follow Up",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Make Phone Call",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "Follow WhatsApp Process",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "no"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "yes"
+      },
+      {
+        "from": "D",
+        "to": "F",
+        "label": "no"
+      },
+      {
+        "from": "E",
+        "to": "G"
+      },
+      {
+        "from": "G",
+        "to": "H",
+        "label": "yes"
+      },
+      {
+        "from": "G",
+        "to": "I",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "J"
+      },
+      {
+        "from": "I",
+        "to": "H"
+      }
+    ]
+  },
+  "complex-3": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Vendor Certification",
+        "type": "end"
+      },
+      {
+        "id": "B",
+        "label": "Breach of Conditions?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Certificate Cancellation",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Continue Vending",
+        "type": "end"
+      },
+      {
+        "id": "E",
+        "label": "Dispute Resolution Body",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Chairperson",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Two Professionals",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Designated Vending Zone",
+        "type": "end"
+      },
+      {
+        "id": "I",
+        "label": "Penalty for No Certificate",
+        "type": "process"
+      },
+      {
+        "id": "J",
+        "label": "Physical Removal",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "Yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "No"
+      },
+      {
+        "from": "C",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "E",
+        "to": "G"
+      },
+      {
+        "from": "D",
+        "to": "H"
+      },
+      {
+        "from": "A",
+        "to": "I"
+      },
+      {
+        "from": "I",
+        "to": "J"
+      },
+      {
+        "from": "J",
+        "to": "H"
+      }
+    ]
+  },
+  "complex-4": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Established Agreement",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Propose Edit",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Implement Edit",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Disagreement?",
+        "type": "decision"
+      },
+      {
+        "id": "E",
+        "label": "Seek Compromise",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Ask for Further Edits",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Need Further Edits?",
+        "type": "decision"
+      },
+      {
+        "id": "H",
+        "label": "Vote on Agreement",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Agree with State?",
+        "type": "decision"
+      },
+      {
+        "id": "J",
+        "label": "New Consensus",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "yes"
+      },
+      {
+        "from": "D",
+        "to": "F",
+        "label": "no"
+      },
+      {
+        "from": "F",
+        "to": "G"
+      },
+      {
+        "from": "G",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "G",
+        "to": "H",
+        "label": "no"
+      },
+      {
+        "from": "H",
+        "to": "I"
+      },
+      {
+        "from": "I",
+        "to": "J",
+        "label": "yes"
+      },
+      {
+        "from": "I",
+        "to": "E",
+        "label": "no"
+      }
+    ]
+  },
+  "complex-5": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start Game",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Make a Guess",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Is the Guess Correct?",
+        "type": "decision"
+      },
+      {
+        "id": "D",
+        "label": "Continue Guessing",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Max Incorrect Guesses Reached?",
+        "type": "decision"
+      },
+      {
+        "id": "F",
+        "label": "Lose",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Word Fully Guessed?",
+        "type": "decision"
+      },
+      {
+        "id": "H",
+        "label": "Win",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "Yes"
+      },
+      {
+        "from": "C",
+        "to": "E",
+        "label": "No"
+      },
+      {
+        "from": "E",
+        "to": "D",
+        "label": "No"
+      },
+      {
+        "from": "E",
+        "to": "F",
+        "label": "Yes"
+      },
+      {
+        "from": "D",
+        "to": "G"
+      },
+      {
+        "from": "G",
+        "to": "H",
+        "label": "Yes"
+      },
+      {
+        "from": "G",
+        "to": "B",
+        "label": "No"
+      }
+    ]
+  },
+  "complex-6": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Initial Agreement",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Propose Edit",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Disagreement?",
+        "type": "decision"
+      },
+      {
+        "id": "D",
+        "label": "Seek Compromise",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Wait Period",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Further Edits Needed?",
+        "type": "decision"
+      },
+      {
+        "id": "G",
+        "label": "Vote on Current State",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "Consensus Reached?",
+        "type": "decision"
+      },
+      {
+        "id": "I",
+        "label": "New Consensus",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D",
+        "label": "Yes"
+      },
+      {
+        "from": "C",
+        "to": "E",
+        "label": "No"
+      },
+      {
+        "from": "D",
+        "to": "E"
+      },
+      {
+        "from": "E",
+        "to": "F"
+      },
+      {
+        "from": "F",
+        "to": "B",
+        "label": "Yes"
+      },
+      {
+        "from": "F",
+        "to": "G",
+        "label": "No"
+      },
+      {
+        "from": "G",
+        "to": "H"
+      },
+      {
+        "from": "H",
+        "to": "I",
+        "label": "Yes"
+      },
+      {
+        "from": "H",
+        "to": "D",
+        "label": "No"
+      }
+    ]
+  },
+  "simple-complex-1": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Is object inside a decorator?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Translate/Edit object",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "yes"
+      },
+      {
+        "from": "B",
+        "to": "A",
+        "label": "no"
+      }
+    ]
+  },
+  "reverse-edge-merging-1": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Lamp Working?",
+        "type": "decision"
+      },
+      {
+        "id": "B",
+        "label": "Is Lamp Plugged?",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Bulb Burned Out?",
+        "type": "decision"
+      },
+      {
+        "id": "D",
+        "label": "Plug in Lamp",
+        "type": "process"
+      },
+      {
+        "id": "E",
+        "label": "Replace Bulb",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Repair Lamp",
+        "type": "process"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B",
+        "label": "no"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "yes"
+      },
+      {
+        "from": "B",
+        "to": "D",
+        "label": "no"
+      },
+      {
+        "from": "C",
+        "to": "E",
+        "label": "yes"
+      },
+      {
+        "from": "C",
+        "to": "F",
+        "label": "no"
+      },
+      {
+        "from": "D",
+        "to": "B"
+      },
+      {
+        "from": "E",
+        "to": "A"
+      },
+      {
+        "from": "F",
+        "to": "A"
+      }
+    ]
+  },
+  "reverse-edge-merging-2": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Establish Agreement",
+        "type": "process"
+      },
+      {
+        "id": "B",
+        "label": "Propose Edit",
+        "type": "process"
+      },
+      {
+        "id": "C",
+        "label": "Implement Edit",
+        "type": "process"
+      },
+      {
+        "id": "D",
+        "label": "Others Disagree?",
+        "type": "decision"
+      },
+      {
+        "id": "E",
+        "label": "Seek Compromise",
+        "type": "process"
+      },
+      {
+        "id": "F",
+        "label": "Ask for Further Edits",
+        "type": "process"
+      },
+      {
+        "id": "G",
+        "label": "Vote on Current State",
+        "type": "process"
+      },
+      {
+        "id": "H",
+        "label": "New Consensus",
+        "type": "process"
+      },
+      {
+        "id": "I",
+        "label": "Process Ends",
+        "type": "end"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C"
+      },
+      {
+        "from": "C",
+        "to": "D"
+      },
+      {
+        "from": "D",
+        "to": "E",
+        "label": "yes"
+      },
+      {
+        "from": "D",
+        "to": "F",
+        "label": "no"
+      },
+      {
+        "from": "F",
+        "to": "B",
+        "label": "yes"
+      },
+      {
+        "from": "F",
+        "to": "G",
+        "label": "no"
+      },
+      {
+        "from": "G",
+        "to": "H",
+        "label": "Agree"
+      },
+      {
+        "from": "G",
+        "to": "E",
+        "label": "Disagree"
+      },
+      {
+        "from": "H",
+        "to": "I",
+        "label": "yes"
+      },
+      {
+        "from": "H",
+        "to": "B",
+        "label": "no"
+      }
+    ]
+  },
+  "reverse-edge-merging-3": {
+    "nodes": [
+      {
+        "id": "A",
+        "label": "Start",
+        "type": "start"
+      },
+      {
+        "id": "B",
+        "label": "Condition",
+        "type": "decision"
+      },
+      {
+        "id": "C",
+        "label": "Action 1",
+        "type": "process"
+      },
+      {
+        "id": "A1",
+        "label": "Go back to Start",
+        "type": "start"
+      }
+    ],
+    "edges": [
+      {
+        "from": "A",
+        "to": "B"
+      },
+      {
+        "from": "B",
+        "to": "C",
+        "label": "yes"
+      },
+      {
+        "from": "B",
+        "to": "A1",
+        "label": "no"
+      },
+      {
+        "from": "A1",
+        "to": "B"
+      },
+      {
+        "from": "C",
+        "to": "A"
+      }
+    ]
+  }
+}
