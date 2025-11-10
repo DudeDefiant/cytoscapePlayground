@@ -12,17 +12,17 @@
     },
     {
       "id": "tala",
-      "label": "Tala",
+      "label": "TALA (Close source)",
       "type": "svg"
     },
     {
       "id": "elk",
-      "label": "Elk",
+      "label": "ELK",
       "type": "svg"
     },
     {
       "id": "graphviz",
-      "label": "Graphviz",
+      "label": "Graphviz (DOT)",
       "type": "svg"
     }
   ],
