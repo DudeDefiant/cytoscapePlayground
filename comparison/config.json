@@ -19,6 +19,11 @@
       "id": "elk",
       "label": "Elk",
       "type": "svg"
+    },
+    {
+      "id": "graphviz",
+      "label": "Graphviz",
+      "type": "svg"
     }
   ],
   "testCases": [
