@@ -21,7 +21,7 @@ A powerful, interactive graph visualization playground built with Cytoscape.js. 
 ## 🚀 Quick Start
 
 ### View Live Demo
-Visit the **[live demo](https://your-username.github.io/cytoscape)** to try it out immediately.
+Visit the **[live demo](https://dudedefiant.github.io/cytoscape)** to try it out immediately.
 
 ### Run Locally
 
