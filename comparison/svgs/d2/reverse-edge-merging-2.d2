@@ -1,0 +1,105 @@
+# reverse-edge-merging-2
+
+direction: down
+
+A: {
+  label: "Establish Agreement"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+B: {
+  label: "Propose Edit"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Implement Edit"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Others Disagree?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Seek Compromise"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Ask for Further Edits"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Vote on Current State"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "New Consensus"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+I: {
+  label: "Process Ends"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+A -> B
+B -> C
+C -> D
+D -> E
+D -> F
+F -> B
+F -> G
+G -> H
+G -> E
+H -> I
+H -> B

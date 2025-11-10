@@ -1,0 +1,105 @@
+# complex-6
+
+direction: down
+
+A: {
+  label: "Initial Agreement"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+B: {
+  label: "Propose Edit"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Disagreement?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Seek Compromise"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Wait Period"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Further Edits Needed?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Vote on Current State"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "Consensus Reached?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+I: {
+  label: "New Consensus"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+C -> D
+C -> E
+D -> E
+E -> F
+F -> B
+F -> G
+G -> H
+H -> I
+H -> D

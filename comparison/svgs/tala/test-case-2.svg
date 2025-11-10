@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <style>
+      .node { fill: #f093fb; stroke: #333; stroke-width: 2; }
+      .label { fill: white; font-family: Arial; font-size: 12px; text-anchor: middle; }
+      .edge { stroke: #333; stroke-width: 2; fill: none; }
+      .arrow { fill: #333; }
+    </style>
+  </defs>
+  
+  <!-- Root node -->
+  <polygon points="200,5 225,30 200,55 175,30" class="node"/>
+  <text x="200" y="35" class="label">Root</text>
+  
+  <!-- Level 1 -->
+  <polygon points="100,75 125,100 100,125 75,100" class="node"/>
+  <text x="100" y="105" class="label">B1</text>
+  
+  <polygon points="300,75 325,100 300,125 275,100" class="node"/>
+  <text x="300" y="105" class="label">B2</text>
+  
+  <!-- Level 2 -->
+  <polygon points="50,155 75,180 50,205 25,180" class="node"/>
+  <text x="50" y="185" class="label">C1</text>
+  
+  <polygon points="150,155 175,180 150,205 125,180" class="node"/>
+  <text x="150" y="185" class="label">C2</text>
+  
+  <polygon points="250,155 275,180 250,205 225,180" class="node"/>
+  <text x="250" y="185" class="label">C3</text>
+  
+  <polygon points="350,155 375,180 350,205 325,180" class="node"/>
+  <text x="350" y="185" class="label">C4</text>
+  
+  <!-- Edges -->
+  <line x1="200" y1="55" x2="100" y2="75" class="edge"/>
+  <polygon points="100,75 98,70 103,72" class="arrow"/>
+  
+  <line x1="200" y1="55" x2="300" y2="75" class="edge"/>
+  <polygon points="300,75 298,70 303,72" class="arrow"/>
+  
+  <line x1="100" y1="125" x2="50" y2="155" class="edge"/>
+  <polygon points="50,155 48,150 53,152" class="arrow"/>
+  
+  <line x1="100" y1="125" x2="150" y2="155" class="edge"/>
+  <polygon points="150,155 148,150 153,152" class="arrow"/>
+  
+  <line x1="300" y1="125" x2="250" y2="155" class="edge"/>
+  <polygon points="250,155 248,150 253,152" class="arrow"/>
+  
+  <line x1="300" y1="125" x2="350" y2="155" class="edge"/>
+  <polygon points="350,155 348,150 353,152" class="arrow"/>
+</svg>
+

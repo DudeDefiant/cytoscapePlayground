@@ -498,14 +498,15 @@
                 roots.push(Object.keys(graph)[0]);
             }
 
-            console.log('\n=== LAYER ASSIGNMENT ===');
+            console.log('\n=== LAYER ASSIGNMENT (OPTIMIZED) ===');
             console.log('Roots:', roots);
             console.log('Graph structure:');
             Object.keys(graph).forEach(node => {
                 console.log(`  ${node}: incoming=[${graph[node].incoming}], outgoing=[${graph[node].outgoing}]`);
             });
 
-            // Use longest path to assign layers
+            // OPTIMIZATION PHASE 3: Use longest path to assign layers (standard approach)
+            // This is the foundation for width minimization
             const visited = new Set();
             const queue = roots.map(r => ({node: r, layer: 0}));
 
@@ -530,7 +531,68 @@
                 layers[layer].push(node);
             });
 
+            // OPTIMIZATION PHASE 3B: Layer balancing to minimize maximum width
+            this.balanceLayers(layers, graph, nodeLayer);
+
             return layers;
+        }
+
+        balanceLayers(layers, graph, nodeLayer) {
+            // OPTIMIZATION PHASE 3B: Balance layer widths to minimize maximum width
+            // Try moving nodes to adjacent layers if it improves balance
+            console.log(`\n=== LAYER BALANCING ===`);
+            const initialMaxWidth = Math.max(...layers.map(l => l.length));
+            console.log(`  Initial max layer width: ${initialMaxWidth}`);
+
+            let improved = true;
+            let iterations = 0;
+            const maxIterations = 10;
+
+            while (improved && iterations < maxIterations) {
+                improved = false;
+                iterations++;
+
+                for (let layerIdx = 0; layerIdx < layers.length; layerIdx++) {
+                    const layer = layers[layerIdx];
+                    if (layer.length <= 1) continue;
+
+                    // Try moving each node to adjacent layer
+                    for (let nodeIdx = 0; nodeIdx < layer.length; nodeIdx++) {
+                        const node = layer[nodeIdx];
+
+                        // Check if we can move to next layer
+                        if (layerIdx < layers.length - 1) {
+                            const canMoveDown = graph[node].outgoing.every(child => {
+                                const childLayer = nodeLayer[child];
+                                return childLayer > layerIdx;
+                            });
+
+                            if (canMoveDown) {
+                                const currentMaxWidth = Math.max(...layers.map(l => l.length));
+                                const newMaxWidth = Math.max(
+                                    layer.length - 1,
+                                    layers[layerIdx + 1].length + 1,
+                                    ...layers.slice(0, layerIdx).map(l => l.length),
+                                    ...layers.slice(layerIdx + 2).map(l => l.length)
+                                );
+
+                                if (newMaxWidth < currentMaxWidth) {
+                                    layer.splice(nodeIdx, 1);
+                                    layers[layerIdx + 1].push(node);
+                                    nodeLayer[node] = layerIdx + 1;
+                                    improved = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (improved) break;
+                }
+            }
+
+            const finalMaxWidth = Math.max(...layers.map(l => l.length));
+            console.log(`  Final max layer width: ${finalMaxWidth} (improved: ${finalMaxWidth < initialMaxWidth})`);
         }
 
         addDummyNodes(layers, edges) {
@@ -598,10 +660,15 @@
         }
 
         minimizeCrossings(layers, edges) {
-            // Enhanced crossing minimization with median heuristic and multiple strategies
-            const maxIterations = 24;
+            // OPTIMIZATION PHASE 1: Enhanced crossing minimization with dynamic iterations and early stopping
+            const maxIterations = 100;
+            const earlyStoppingThreshold = 5;
             let bestLayers = layers.map(l => [...l]);
             let bestCrossings = this.countCrossings(bestLayers, edges);
+            let noImprovementCount = 0;
+
+            console.log(`\n=== CROSSING MINIMIZATION (OPTIMIZED) ===`);
+            console.log(`Starting crossings: ${bestCrossings}`);
 
             for (let iter = 0; iter < maxIterations; iter++) {
                 const newLayers = bestLayers.map(l => [...l]);
@@ -635,15 +702,67 @@
                 if (crossings < bestCrossings) {
                     bestLayers = newLayers;
                     bestCrossings = crossings;
+                    noImprovementCount = 0;
+                } else {
+                    noImprovementCount++;
                 }
 
-                if (crossings === 0) break;
+                if (crossings === 0) {
+                    console.log(`  ✓ Zero crossings achieved at iteration ${iter}`);
+                    break;
+                }
+
+                // Early stopping if no improvement for threshold iterations
+                if (noImprovementCount >= earlyStoppingThreshold) {
+                    console.log(`  ✓ Early stopping at iteration ${iter} (no improvement for ${earlyStoppingThreshold} iterations)`);
+                    break;
+                }
             }
+
+            // OPTIMIZATION PHASE 1B: Greedy crossing reduction (post-processing)
+            bestLayers = this.greedyCrossingReduction(bestLayers, edges);
+            const crossingsAfterGreedy = this.countCrossings(bestLayers, edges);
+            console.log(`  Crossings after greedy reduction: ${crossingsAfterGreedy}`);
 
             // Final optimization: try transposing adjacent nodes
             bestLayers = this.transposeOptimization(bestLayers, edges);
+            const finalCrossings = this.countCrossings(bestLayers, edges);
+            console.log(`  Final crossings: ${finalCrossings}`);
 
             return bestLayers;
+        }
+
+        greedyCrossingReduction(layers, edges) {
+            // OPTIMIZATION PHASE 1B: Greedy crossing reduction
+            // For each layer, try swapping adjacent nodes to reduce crossings
+            let improved = true;
+            let result = layers.map(l => [...l]);
+            let currentCrossings = this.countCrossings(result, edges);
+
+            while (improved) {
+                improved = false;
+
+                for (let layerIdx = 0; layerIdx < result.length; layerIdx++) {
+                    const layer = result[layerIdx];
+
+                    for (let i = 0; i < layer.length - 1; i++) {
+                        // Try swapping adjacent nodes
+                        const testLayers = result.map(l => [...l]);
+                        [testLayers[layerIdx][i], testLayers[layerIdx][i + 1]] =
+                            [testLayers[layerIdx][i + 1], testLayers[layerIdx][i]];
+
+                        const testCrossings = this.countCrossings(testLayers, edges);
+
+                        if (testCrossings < currentCrossings) {
+                            result = testLayers;
+                            currentCrossings = testCrossings;
+                            improved = true;
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         orderLayer(layer, referenceLayer, edges, direction, useMedian = false) {
@@ -809,7 +928,54 @@
                 });
             }
 
+            // OPTIMIZATION PHASE 2: Horizontal compaction to reduce path lengths
+            this.compactHorizontally(layers, positions);
+
             return positions;
+        }
+
+        compactHorizontally(layers, positions) {
+            // OPTIMIZATION PHASE 2: Horizontal compaction
+            // Shift nodes horizontally to minimize width while maintaining relative ordering
+            console.log(`\n=== HORIZONTAL COMPACTION (OPTIMIZED) ===`);
+
+            if (this.direction === 'TB') {
+                // Top to Bottom: compact horizontally (x-axis)
+                const layerWidths = layers.map(l => l.length);
+                const maxWidth = Math.max(...layerWidths);
+                const minSpacing = 1; // Minimum grid cells between nodes
+
+                layers.forEach((layer, layerIdx) => {
+                    const layerWidth = layer.length;
+                    const compactWidth = layerWidth + (layerWidth - 1) * minSpacing;
+                    const centerOffset = (maxWidth - compactWidth) / 2;
+
+                    layer.forEach((node, nodeIdx) => {
+                        const newCol = centerOffset + nodeIdx * (1 + minSpacing);
+                        positions[node].col = Math.round(newCol);
+                        positions[node].x = positions[node].col * this.cellWidth + this.cellWidth / 2;
+                    });
+                });
+            } else {
+                // Left to Right: compact vertically (y-axis)
+                const layerHeights = layers.map(l => l.length);
+                const maxHeight = Math.max(...layerHeights);
+                const minSpacing = 1; // Minimum grid cells between nodes
+
+                layers.forEach((layer, layerIdx) => {
+                    const layerHeight = layer.length;
+                    const compactHeight = layerHeight + (layerHeight - 1) * minSpacing;
+                    const centerOffset = (maxHeight - compactHeight) / 2;
+
+                    layer.forEach((node, nodeIdx) => {
+                        const newRow = centerOffset + nodeIdx * (1 + minSpacing);
+                        positions[node].row = Math.round(newRow);
+                        positions[node].y = positions[node].row * this.cellHeight + this.cellHeight / 2;
+                    });
+                });
+            }
+
+            console.log(`  ✓ Horizontal compaction complete`);
         }
 
         routeEdges(positions, edges) {
@@ -1582,7 +1748,86 @@
             score += directionConsistencyScore;
             breakdown['Direction Consistency'] = directionConsistencyScore;
 
+            // OPTIMIZATION PHASE 4: ROUTING COMPLEXITY / BEND MINIMIZATION - Weight: 80
+            // Estimate the number of bends needed for this port pair and penalize high-bend routes
+            // Straight-line routing (0 bends) is ideal, L-shaped (1 bend) is acceptable, Z-shaped (2+ bends) is poor
+            let routingComplexityScore = 0;
+            const estimatedBends = this.estimateRoutingBends(sourcePortSide, targetPortSide, colDiff, rowDiff);
+
+            // Score based on estimated bends:
+            // 0 bends (straight line): +80
+            // 1 bend (L-shape): +40
+            // 2 bends (Z-shape): 0
+            // 3+ bends: -40
+            if (estimatedBends === 0) {
+                routingComplexityScore = 80;
+            } else if (estimatedBends === 1) {
+                routingComplexityScore = 40;
+            } else if (estimatedBends === 2) {
+                routingComplexityScore = 0;
+            } else {
+                routingComplexityScore = -40;
+            }
+
+            score += routingComplexityScore;
+            breakdown['Routing Complexity'] = routingComplexityScore;
+
             return {score, breakdown};
+        }
+
+        /**
+         * OPTIMIZATION PHASE 4: Estimate the number of bends needed for a port pair
+         * This helps minimize routing complexity during port assignment
+         */
+        estimateRoutingBends(sourcePortSide, targetPortSide, colDiff, rowDiff) {
+            // Determine if we need horizontal and/or vertical routing
+            const needsHorizontal = colDiff !== 0;
+            const needsVertical = rowDiff !== 0;
+
+            // Determine port directions
+            const sourceIsHorizontal = sourcePortSide === 'left' || sourcePortSide === 'right';
+            const sourceIsVertical = sourcePortSide === 'top' || sourcePortSide === 'bottom';
+            const targetIsHorizontal = targetPortSide === 'left' || targetPortSide === 'right';
+            const targetIsVertical = targetPortSide === 'top' || targetPortSide === 'bottom';
+
+            // Count bends needed
+            let bends = 0;
+
+            if (needsHorizontal && needsVertical) {
+                // Need both horizontal and vertical routing
+                if (sourceIsHorizontal && targetIsVertical) {
+                    bends = 1; // L-shape: horizontal then vertical
+                } else if (sourceIsVertical && targetIsHorizontal) {
+                    bends = 1; // L-shape: vertical then horizontal
+                } else if (sourceIsHorizontal && targetIsHorizontal) {
+                    bends = 2; // Z-shape: horizontal, vertical, horizontal
+                } else if (sourceIsVertical && targetIsVertical) {
+                    bends = 2; // Z-shape: vertical, horizontal, vertical
+                }
+            } else if (needsHorizontal) {
+                // Only horizontal routing needed
+                if (sourceIsHorizontal && targetIsHorizontal) {
+                    bends = 0; // Straight horizontal
+                } else if (sourceIsVertical && targetIsVertical) {
+                    bends = 2; // Vertical, horizontal, vertical
+                } else {
+                    bends = 1; // One direction change
+                }
+            } else if (needsVertical) {
+                // Only vertical routing needed
+                if (sourceIsVertical && targetIsVertical) {
+                    bends = 0; // Straight vertical
+                } else if (sourceIsHorizontal && targetIsHorizontal) {
+                    bends = 2; // Horizontal, vertical, horizontal
+                } else {
+                    bends = 1; // One direction change
+                }
+            } else {
+                // Same position (shouldn't happen)
+                bends = 0;
+            }
+
+            return bends;
         }
 
         /**

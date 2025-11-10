@@ -1,0 +1,115 @@
+# complex-4
+
+direction: down
+
+A: {
+  label: "Established Agreement"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+B: {
+  label: "Propose Edit"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Implement Edit"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Disagreement?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Seek Compromise"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Ask for Further Edits"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Need Further Edits?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "Vote on Agreement"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+I: {
+  label: "Agree with State?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+J: {
+  label: "New Consensus"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+C -> D
+D -> E
+D -> F
+F -> G
+G -> B
+G -> H
+H -> I
+I -> J
+I -> E

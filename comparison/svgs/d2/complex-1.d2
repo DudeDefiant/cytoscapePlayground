@@ -1,0 +1,82 @@
+# complex-1
+
+direction: down
+
+A: {
+  label: "Start Game"
+  shape: circle
+  style: {
+    fill: "#90EE90"
+    stroke: "#228B22"
+    stroke-width: 2
+  }
+}
+
+B: {
+  label: "Correct Guess?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Continue Game"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Attempts Left?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Lose"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Word Complete? >"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Win"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+B -> D
+D -> C
+D -> E
+C -> F
+F -> G
+F -> B

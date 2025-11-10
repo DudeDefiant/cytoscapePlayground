@@ -1,0 +1,72 @@
+# reverse-edge-merging-1
+
+direction: down
+
+A: {
+  label: "Lamp Working?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+B: {
+  label: "Is Lamp Plugged?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Bulb Burned Out?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Plug in Lamp"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Replace Bulb"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Repair Lamp"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+B -> D
+C -> E
+C -> F
+D -> B
+E -> A
+F -> A

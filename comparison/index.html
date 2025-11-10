@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            table-layout: auto;
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-right: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        tr {
+            display: table-row;
+        }
+
+        td {
+            padding: 15px;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+            display: table-cell;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .sl-no {
+            width: 60px;
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .name {
+            width: 200px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .svg-cell {
+            width: 300px;
+            height: 300px;
+            min-width: 300px;
+            min-height: 300px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            padding: 10px;
+        }
+
+        .svg-cell svg {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            display: block;
+        }
+
+        .svg-cell.loading {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .svg-cell.error {
+            color: #dc3545;
+            font-size: 0.9em;
+            background: #fff5f5;
+        }
+
+        .svg-cell.empty {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-top: 1px solid #dee2e6;
+            color: #666;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        @media (max-width: 1200px) {
+            .svg-cell {
+                width: 200px;
+                height: 200px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .svg-cell {
+                width: 150px;
+                height: 150px;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 0.8em;
+            }
+
+            .name {
+                width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SVG Comparison</h1>
+            <p>Compare different implementations side by side</p>
+        </div>
+
+        <div class="content">
+            <table id="comparisonTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th>Sl. No.</th>
+                        <th>Name</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <p>Comparison data loaded from <code>config.json</code></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration and data loading
+        let config = null;
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('config.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                config = await response.json();
+                console.log('Config loaded:', config);
+                initializeTable();
+            } catch (error) {
+                console.error('Error loading config:', error);
+                document.getElementById('tableBody').innerHTML = 
+                    '<tr><td colspan="6" style="text-align: center; color: red;">Error loading configuration</td></tr>';
+            }
+        }
+
+        function initializeTable() {
+            if (!config) return;
+
+            // Add column headers
+            const headerRow = document.getElementById('headerRow');
+            config.columns.forEach(column => {
+                const th = document.createElement('th');
+                th.textContent = column.label;
+                headerRow.appendChild(th);
+            });
+
+            // Add rows
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+
+            config.testCases.forEach((testCase, index) => {
+                const row = document.createElement('tr');
+
+                // Serial number
+                const slCell = document.createElement('td');
+                slCell.className = 'sl-no';
+                slCell.textContent = index + 1;
+                row.appendChild(slCell);
+
+                // Name
+                const nameCell = document.createElement('td');
+                nameCell.className = 'name';
+                nameCell.textContent = testCase.name;
+                row.appendChild(nameCell);
+
+                // SVG cells
+                config.columns.forEach(column => {
+                    const svgCell = document.createElement('td');
+                    svgCell.className = 'svg-cell';
+
+                    // Construct SVG path: svgs/<column_id>/<testcase_id>.*
+                    const svgPath = `svgs/${column.id}/${testCase.id}`;
+                    loadSVG(svgCell, svgPath);
+
+                    row.appendChild(svgCell);
+                });
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function loadSVG(cell, svgPath) {
+            cell.classList.add('loading');
+            cell.textContent = 'Loading...';
+
+            try {
+                // Try to find the file with any extension (.svg, .SVG, .png, .PNG)
+                const extensions = ['.svg', '.SVG', '.png', '.PNG'];
+                let response = null;
+                let lastError = null;
+                let loadedExt = null;
+
+                for (const ext of extensions) {
+                    try {
+                        response = await fetch(svgPath + ext);
+                        if (response.ok) {
+                            loadedExt = ext;
+                            break;
+                        }
+                    } catch (e) {
+                        lastError = e;
+                    }
+                }
+
+                if (!response || !response.ok) {
+                    throw lastError || new Error('File not found');
+                }
+
+                cell.classList.remove('loading');
+
+                // Handle SVG files
+                if (loadedExt === '.svg' || loadedExt === '.SVG') {
+                    const svgText = await response.text();
+                    cell.innerHTML = svgText;
+                }
+                // Handle PNG files
+                else if (loadedExt === '.png' || loadedExt === '.PNG') {
+                    const blob = await response.blob();
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(blob);
+                    img.style.maxWidth = '100%';
+                    img.style.maxHeight = '100%';
+                    img.style.width = 'auto';
+                    img.style.height = 'auto';
+                    cell.innerHTML = '';
+                    cell.appendChild(img);
+                }
+            } catch (error) {
+                console.error(`Error loading file from ${svgPath}:`, error);
+                cell.classList.remove('loading');
+                cell.classList.add('error');
+                cell.textContent = 'Failed to load';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
+</html>
+

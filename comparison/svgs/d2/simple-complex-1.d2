@@ -1,0 +1,37 @@
+# simple-complex-1
+
+direction: down
+
+A: {
+  label: "Start"
+  shape: circle
+  style: {
+    fill: "#90EE90"
+    stroke: "#228B22"
+    stroke-width: 2
+  }
+}
+
+B: {
+  label: "Is object inside a decorator?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Translate/Edit object"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+B -> A

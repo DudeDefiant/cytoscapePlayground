@@ -1,0 +1,93 @@
+# complex-5
+
+direction: down
+
+A: {
+  label: "Start Game"
+  shape: circle
+  style: {
+    fill: "#90EE90"
+    stroke: "#228B22"
+    stroke-width: 2
+  }
+}
+
+B: {
+  label: "Make a Guess"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Is the Guess Correct?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Continue Guessing"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Max Incorrect Guesses Reached?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Lose"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Word Fully Guessed?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "Win"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+C -> D
+C -> E
+E -> D
+E -> F
+D -> G
+G -> H
+G -> B

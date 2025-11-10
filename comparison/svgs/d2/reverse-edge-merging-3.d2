@@ -1,0 +1,49 @@
+# reverse-edge-merging-3
+
+direction: down
+
+A: {
+  label: "Start"
+  shape: circle
+  style: {
+    fill: "#90EE90"
+    stroke: "#228B22"
+    stroke-width: 2
+  }
+}
+
+B: {
+  label: "Condition"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Action 1"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A1: {
+  label: "Go back to Start"
+  shape: circle
+  style: {
+    fill: "#90EE90"
+    stroke: "#228B22"
+    stroke-width: 2
+  }
+}
+
+A -> B
+B -> C
+B -> A1
+A1 -> B
+C -> A

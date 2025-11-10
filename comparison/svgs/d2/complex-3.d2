@@ -1,0 +1,114 @@
+# complex-3
+
+direction: down
+
+A: {
+  label: "Vendor Certification"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+B: {
+  label: "Breach of Conditions?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Certificate Cancellation"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+D: {
+  label: "Continue Vending"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+E: {
+  label: "Dispute Resolution Body"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+F: {
+  label: "Chairperson"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Two Professionals"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "Designated Vending Zone"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+I: {
+  label: "Penalty for No Certificate"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+J: {
+  label: "Physical Removal"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+B -> D
+C -> E
+E -> F
+E -> G
+D -> H
+A -> I
+I -> J
+J -> H

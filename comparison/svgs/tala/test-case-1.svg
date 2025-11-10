@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+  <defs>
+    <style>
+      .node { fill: #f093fb; stroke: #333; stroke-width: 2; }
+      .label { fill: white; font-family: Arial; font-size: 14px; text-anchor: middle; }
+      .edge { stroke: #333; stroke-width: 2; fill: none; }
+      .arrow { fill: #333; }
+    </style>
+  </defs>
+  
+  <!-- Nodes -->
+  <polygon points="50,70 80,100 50,130 20,100" class="node"/>
+  <text x="50" y="105" class="label">A</text>
+  
+  <polygon points="150,70 180,100 150,130 120,100" class="node"/>
+  <text x="150" y="105" class="label">B</text>
+  
+  <polygon points="250,70 280,100 250,130 220,100" class="node"/>
+  <text x="250" y="105" class="label">C</text>
+  
+  <polygon points="350,70 380,100 350,130 320,100" class="node"/>
+  <text x="350" y="105" class="label">D</text>
+  
+  <!-- Edges -->
+  <line x1="80" y1="100" x2="120" y2="100" class="edge"/>
+  <polygon points="120,100 115,95 115,105" class="arrow"/>
+  
+  <line x1="180" y1="100" x2="220" y2="100" class="edge"/>
+  <polygon points="220,100 215,95 215,105" class="arrow"/>
+  
+  <line x1="280" y1="100" x2="320" y2="100" class="edge"/>
+  <polygon points="320,100 315,95 315,105" class="arrow"/>
+</svg>
+

@@ -1,0 +1,150 @@
+{
+  "columns": [
+    {
+      "id": "current",
+      "label": "Current",
+      "type": "svg"
+    },
+    {
+      "id": "inhouse",
+      "label": "In House Implementation",
+      "type": "png"
+    },
+    {
+      "id": "tala",
+      "label": "Tala",
+      "type": "svg"
+    },
+    {
+      "id": "elk",
+      "label": "Elk",
+      "type": "svg"
+    }
+  ],
+  "testCases": [
+    {
+      "id": "Change-tyre",
+      "name": "Change tyre"
+    },
+    {
+      "id": "Cycle",
+      "name": "Cycle"
+    },
+    {
+      "id": "Defining",
+      "name": "Defining"
+    },
+    {
+      "id": "Earth",
+      "name": "Earth"
+    },
+    {
+      "id": "Evaluate",
+      "name": "Evaluate"
+    },
+    {
+      "id": "Feedback",
+      "name": "Feedback"
+    },
+    {
+      "id": "Flowchart",
+      "name": "Flowchart"
+    },
+    {
+      "id": "Freelance",
+      "name": "Freelance"
+    },
+    {
+      "id": "Hanger",
+      "name": "Hanger"
+    },
+    {
+      "id": "Is",
+      "name": "Is"
+    },
+    {
+      "id": "Jupiter",
+      "name": "Jupiter"
+    },
+    {
+      "id": "Logo",
+      "name": "Logo"
+    },
+    {
+      "id": "Manager",
+      "name": "Manager"
+    },
+    {
+      "id": "Setup",
+      "name": "Setup"
+    },
+    {
+      "id": "Simple",
+      "name": "Simple"
+    },
+    {
+      "id": "Thank",
+      "name": "Thank"
+    },
+    {
+      "id": "Training",
+      "name": "Training"
+    },
+    {
+      "id": "Under",
+      "name": "Under"
+    },
+    {
+      "id": "What",
+      "name": "What"
+    },
+    {
+      "id": "captures",
+      "name": "captures"
+    },
+    {
+      "id": "complex-1",
+      "name": "complex 1"
+    },
+    {
+      "id": "complex-2",
+      "name": "complex 2"
+    },
+    {
+      "id": "complex-3",
+      "name": "complex 3"
+    },
+    {
+      "id": "complex-4",
+      "name": "complex 4"
+    },
+    {
+      "id": "complex-5",
+      "name": "complex 5"
+    },
+    {
+      "id": "complex-6",
+      "name": "complex 6"
+    },
+    {
+      "id": "decision-flip",
+      "name": "decision flip"
+    },
+    {
+      "id": "reverse-edge-merging-1",
+      "name": "reverse edge merging 1"
+    },
+    {
+      "id": "reverse-edge-merging-2",
+      "name": "reverse edge merging 2"
+    },
+    {
+      "id": "reverse-edge-merging-3",
+      "name": "reverse edge merging 3"
+    },
+    {
+      "id": "simple-complex-1",
+      "name": "simple complex 1"
+    }
+  ]
+}

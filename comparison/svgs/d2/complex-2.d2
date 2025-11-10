@@ -1,0 +1,114 @@
+# complex-2
+
+direction: down
+
+A: {
+  label: "Lead Form Created"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+B: {
+  label: "Contact Number Provided?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+C: {
+  label: "Send WhatsApp Message"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+D: {
+  label: "Email Address Provided?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+E: {
+  label: "Send Intro Email"
+  shape: circle
+  style: {
+    fill: "#FFB6C1"
+    stroke: "#C71585"
+    stroke-width: 2
+  }
+}
+
+F: {
+  label: "No Action"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+G: {
+  label: "Response Received?"
+  shape: diamond
+  style: {
+    fill: "#FFD700"
+    stroke: "#DAA520"
+    stroke-width: 1
+  }
+}
+
+H: {
+  label: "Follow Up"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+I: {
+  label: "Make Phone Call"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+J: {
+  label: "Follow WhatsApp Process"
+  shape: rectangle
+  style: {
+    fill: "#87CEEB"
+    stroke: "#4682B4"
+    stroke-width: 1
+  }
+}
+
+A -> B
+B -> C
+B -> D
+D -> E
+D -> F
+E -> G
+G -> H
+G -> I
+C -> J
+I -> H

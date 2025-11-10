@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300">
+  <defs>
+    <style>
+      .node { fill: #f093fb; stroke: #333; stroke-width: 2; }
+      .label { fill: white; font-family: Arial; font-size: 12px; text-anchor: middle; }
+      .edge { stroke: #333; stroke-width: 2; fill: none; }
+      .arrow { fill: #333; }
+    </style>
+  </defs>
+  
+  <!-- Nodes in a circle -->
+  <polygon points="150,25 175,50 150,75 125,50" class="node"/>
+  <text x="150" y="55" class="label">A</text>
+  
+  <polygon points="230,75 255,100 230,125 205,100" class="node"/>
+  <text x="230" y="105" class="label">B</text>
+  
+  <polygon points="230,175 255,200 230,225 205,200" class="node"/>
+  <text x="230" y="205" class="label">C</text>
+  
+  <polygon points="150,225 175,250 150,275 125,250" class="node"/>
+  <text x="150" y="255" class="label">D</text>
+  
+  <polygon points="70,175 95,200 70,225 45,200" class="node"/>
+  <text x="70" y="205" class="label">E</text>
+  
+  <polygon points="70,75 95,100 70,125 45,100" class="node"/>
+  <text x="70" y="105" class="label">F</text>
+  
+  <!-- Circular edges -->
+  <line x1="150" y1="75" x2="230" y2="100" class="edge"/>
+  <polygon points="230,100 228,95 233,97" class="arrow"/>
+  
+  <line x1="230" y1="125" x2="230" y2="175" class="edge"/>
+  <polygon points="230,175 225,170 235,170" class="arrow"/>
+  
+  <line x1="230" y1="225" x2="150" y2="250" class="edge"/>
+  <polygon points="150,250 148,245 153,247" class="arrow"/>
+  
+  <line x1="150" y1="275" x2="70" y2="225" class="edge"/>
+  <polygon points="70,225 65,227 68,222" class="arrow"/>
+  
+  <line x1="70" y1="225" x2="70" y2="125" class="edge"/>
+  <polygon points="70,125 65,130 75,130" class="arrow"/>
+  
+  <line x1="70" y1="75" x2="150" y2="50" class="edge"/>
+  <polygon points="150,50 152,55 147,53" class="arrow"/>
+</svg>
+
