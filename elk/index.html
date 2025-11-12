@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELK Flowchart Layout - Hierarchical Graph Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 20px;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            color: #2d3748;
+            font-size: 28px;
+        }
+
+        .controls {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        select, button {
+            padding: 8px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+        }
+
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            overflow: auto;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        svg {
+            display: block;
+            background: white;
+        }
+
+        .node {
+            cursor: pointer;
+        }
+
+        .node rect {
+            stroke: #333;
+            stroke-width: 2;
+            fill: #4299e1;
+        }
+
+        .node.start rect, .node.end rect {
+            fill: #48bb78;
+            rx: 25;
+        }
+
+        .node.decision polygon {
+            fill: #ed8936;
+        }
+
+        .node text {
+            font-size: 12px;
+            font-family: Arial, sans-serif;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: white;
+            font-weight: 500;
+        }
+
+        .edge path {
+            stroke: #333;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .edge text {
+            font-size: 11px;
+            fill: #666;
+            background: white;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-left: auto;
+            font-size: 13px;
+            color: #4a5568;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .info {
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 6px;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            resize: vertical;
+        }
+
+        .json-input-section {
+            margin-bottom: 20px;
+        }
+
+        .json-input-section label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .json-input-section textarea {
+            width: 100%;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎯 ELK Hierarchical Flowchart Layout</h1>
+
+    <div class="controls">
+        <label for="exampleSelect">Example:</label>
+        <select id="exampleSelect" onchange="loadSelectedExample()">
+            <optgroup label="Basic Examples">
+                <option value="Cycle">Cycle</option>
+                <option value="Flowchart">Flowchart</option>
+                <option value="Under">Under</option>
+                <option value="What">What</option>
+                <option value="Is">Is</option>
+                <option value="Simple">Simple</option>
+                <option value="Hanger">Hanger</option>
+            </optgroup>
+            <optgroup label="Process & Workflow">
+                <option value="Freelance">Freelance</option>
+                <option value="Manager">Manager</option>
+                <option value="Defining">Defining</option>
+                <option value="Evaluate">Evaluate</option>
+                <option value="captures">captures</option>
+                <option value="Logo">Logo</option>
+                <option value="Thank">Thank</option>
+                <option value="Setup">Setup</option>
+                <option value="Feedback">Feedback</option>
+                <option value="Training">Training</option>
+                <option value="Change-tyre">Change-tyre</option>
+            </optgroup>
+            <optgroup label="Decision Trees">
+                <option value="Jupiter">Jupiter</option>
+                <option value="Earth">Earth</option>
+                <option value="decision-flip">decision-flip</option>
+            </optgroup>
+            <optgroup label="Complex Flows">
+                <option value="complex-1">complex-1</option>
+                <option value="complex-2">complex-2</option>
+                <option value="complex-3">complex-3</option>
+                <option value="complex-4">complex-4</option>
+                <option value="complex-5">complex-5</option>
+                <option value="complex-6">complex-6</option>
+                <option value="simple-complex-1">simple-complex-1</option>
+            </optgroup>
+            <optgroup label="Reverse Edge & Merging">
+                <option value="reverse-edge-merging-1">reverse-edge-merging-1</option>
+                <option value="reverse-edge-merging-2">reverse-edge-merging-2</option>
+                <option value="reverse-edge-merging-3">reverse-edge-merging-3</option>
+            </optgroup>
+        </select>
+
+        <select id="layoutDirection" onchange="changeDirection()">
+            <option value="DOWN">Top to Bottom</option>
+            <option value="RIGHT">Left to Right</option>
+            <option value="UP">Bottom to Top</option>
+            <option value="LEFT">Right to Left</option>
+        </select>
+
+        <button onclick="fitToView()">Fit to View</button>
+        <button onclick="toggleDebug()">Toggle Debug</button>
+
+        <div class="stats">
+            <span>Nodes: <strong id="nodeCount">0</strong></span>
+            <span>Edges: <strong id="edgeCount">0</strong></span>
+        </div>
+    </div>
+
+    <div class="json-input-section">
+        <label for="jsonInput">JSON Input:</label>
+        <textarea id="jsonInput" placeholder='Paste your JSON graph here, e.g.:
+{
+  "nodes": [{"id": "n1", "label": "Node 1", "type": "start"}, ...],
+  "edges": [{"from": "n1", "to": "n2"}, ...]
+}'></textarea>
+        <button onclick="renderCustomJSON()" style="margin-top: 8px;">Render JSON</button>
+    </div>
+
+    <div class="canvas-container">
+        <svg id="flowchartSvg"></svg>
+        <div class="info" id="info"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #48bb78;"></div>
+            <span>Start/End</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4299e1;"></div>
+            <span>Process</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ed8936;"></div>
+            <span>Decision</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/elkjs@0.9.3/lib/elk.bundled.js"></script>
+<script src="elk-renderer.js"></script>
+</body>
+</html>
+
