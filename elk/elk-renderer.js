@@ -6,6 +6,7 @@ let currentExample = null;
 let elk = null;
 let debugMode = false;
 let currentDirection = 'DOWN';
+let mergeEdges = false;
 
 // Initialize ELK
 async function initELK() {
@@ -79,8 +80,6 @@ function addWrappedText(svg, x, y, text, color, fontSize) {
 
 // Convert flowchart data to ELK graph format
 function convertToELKGraph(data) {
-    const isHorizontal = currentDirection === 'RIGHT' || currentDirection === 'LEFT';
-
     const graph = {
         id: 'root',
         // layoutOptions: {
@@ -129,6 +128,8 @@ function convertToELKGraph(data) {
             // Quality and thoroughness (D2 uses 8)
             'elk.layered.thoroughness': '8',
 
+            'org.eclipse.elk.layered.feedbackEdges': 'true',
+
             // Spacing between layers and edges (D2 defaults)
             'elk.layered.spacing.edgeEdgeBetweenLayers': '50',
             'elk.layered.spacing.nodeNodeBetweenLayers': '70',
@@ -153,7 +154,7 @@ function convertToELKGraph(data) {
 
             // Edge routing and merging
             'elk.edgeRouting': 'ORTHOGONAL',
-            'elk.layered.mergeEdges': 'true'
+            'elk.layered.mergeEdges': mergeEdges ? 'true' : 'false'
         },
         children: [],
         edges: []
@@ -278,13 +279,13 @@ function renderToSVG(layoutedGraph, originalData) {
 
     const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
     marker.setAttribute('id', 'arrowhead');
-    marker.setAttribute('markerWidth', '12');
-    marker.setAttribute('markerHeight', '12');
-    marker.setAttribute('refX', '10');
-    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('markerWidth', '4');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('refX', '4');
+    marker.setAttribute('refY', '2');
     marker.setAttribute('orient', 'auto');
     const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+    polygon.setAttribute('points', '0 0, 4 2, 0 4');
     polygon.setAttribute('fill', '#2d3748');
     marker.appendChild(polygon);
     defs.appendChild(marker);
@@ -420,6 +421,16 @@ function fitToView() {
 function toggleDebug() {
     debugMode = !debugMode;
     console.log('Debug mode:', debugMode);
+}
+
+// Toggle merge edges
+async function toggleMergeEdges() {
+    const checkbox = document.getElementById('mergeEdgesCheckbox');
+    mergeEdges = checkbox.checked;
+    console.log('Merge edges:', mergeEdges);
+    if (currentExample) {
+        await renderFlowchart(currentExample);
+    }
 }
 
 // Render custom JSON
